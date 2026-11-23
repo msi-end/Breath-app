@@ -29,7 +29,6 @@ class SettingsScreen extends StatelessWidget {
     void push(Widget page) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
 
     return NatureBackground(
-      showHills: false,
       child: SafeArea(
         bottom: false,
         child: ListView(

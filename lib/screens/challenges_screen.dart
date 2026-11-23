@@ -51,19 +51,11 @@ class ChallengesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(s.dailyChallenges)),
       body: NatureBackground(
-        showHills: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
           children: [
             SoftCard(
               padding: const EdgeInsets.all(22),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: context.isDark
-                    ? [const Color(0xFF3A3424), AppColors.nightCard]
-                    : [const Color(0xFFFFF1D6), const Color(0xFFFDF8EE)],
-              ),
               child: Column(
                 children: [
                   Text(

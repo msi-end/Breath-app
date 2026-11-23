@@ -447,6 +447,11 @@ class AppStrings {
   String get hapticsOff => _t('Turn vibration cues off', 'कंपन संकेत बंद करें');
   String get end => _t('End', 'समाप्त');
   String get jumpBackIn => _t('Jump back in', 'फिर से शुरू करें');
+  String savedCount(int n) => _t(n == 1 ? '1 saved technique' : '$n saved techniques', '$n सेव की गई तकनीकें');
+  String weekSummary(String d, int days, int streak) => _t(
+    '$d this week · $days active ${days == 1 ? 'day' : 'days'} · $streak-day streak',
+    'इस सप्ताह $d · $days सक्रिय दिन · $streak दिन की स्ट्रीक',
+  );
   String get progressTooltip => _t('Your progress', 'आपकी प्रगति');
 }
 

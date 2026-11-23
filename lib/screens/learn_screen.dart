@@ -20,7 +20,6 @@ class LearnScreen extends StatelessWidget {
     final featured = allArticles.first;
     final rest = allArticles.skip(1).toList();
     return NatureBackground(
-      showHills: false,
       child: SafeArea(
         bottom: false,
         child: ListView(

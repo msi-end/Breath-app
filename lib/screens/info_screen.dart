@@ -27,7 +27,6 @@ class InfoScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: NatureBackground(
-        showHills: kind == InfoKind.about,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
           children: [

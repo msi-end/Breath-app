@@ -107,8 +107,8 @@ void main() {
     expect(find.text('Pause'), findsNothing); // icon only, tooltip
     await tester.tap(find.byTooltip('Pause'));
     await tester.pump();
-    expect(find.text('PAUSED'), findsOneWidget);
-    await tester.tap(find.text('End'));
+    expect(find.text('Paused'), findsOneWidget);
+    await tester.tap(find.text('End Session'));
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Well done'), findsOneWidget);
     final store = Provider.of<ProgressStore>(tester.element(find.text('Well done')), listen: false);

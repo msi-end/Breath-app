@@ -41,7 +41,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
     final shownHistory = _showAllHistory ? history : history.take(8).toList();
 
     return NatureBackground(
-      showHills: false,
       child: SafeArea(
         bottom: false,
         child: ListView(

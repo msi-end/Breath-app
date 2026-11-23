@@ -125,7 +125,7 @@ class _EmergencyCalmScreenState extends State<EmergencyCalmScreen>
       child: Scaffold(
         body: NatureBackground(
           tint: dark ? const Color(0xFF10222A) : const Color(0xFFDDEFF3),
-          fireflies: true,
+          showHills: true,
           child: SafeArea(
             child: Column(
               children: [
@@ -179,16 +179,10 @@ class _EmergencyCalmScreenState extends State<EmergencyCalmScreen>
                                 Semantics(
                                   liveRegion: true,
                                   label: s.phaseCue(_clock.phase.type),
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      RippleRings(size: visual, color: dark ? AppColors.sky : AppColors.skyDeep),
-                                      GlowOrb(
-                                        size: visual * 0.92,
-                                        expansion: _clock.expansion,
-                                        color: dark ? AppColors.sky : AppColors.skyDeep,
-                                      ),
-                                    ],
+                                  child: GlowOrb(
+                                    size: visual,
+                                    expansion: _clock.expansion,
+                                    color: dark ? AppColors.sky : AppColors.skyDeep,
                                   ),
                                 ),
                                 const SizedBox(height: 20),

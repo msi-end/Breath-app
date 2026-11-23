@@ -228,8 +228,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
       },
       child: Scaffold(
         body: NatureBackground(
-          tint: Color.lerp(t.color, dark ? AppColors.night : AppColors.cream, dark ? 0.86 : 0.55),
-          fireflies: true,
+          tint: Color.lerp(t.color, dark ? AppColors.night : AppColors.cream, dark ? 0.88 : 0.7),
           child: SafeArea(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 500),
@@ -252,7 +251,6 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
     final prepCount = (_prepSeconds - _prepElapsed.floor()).clamp(1, _prepSeconds);
     final totalRounds = _clock.totalRounds ?? 1;
     final round = _clock.round.clamp(1, totalRounds);
-    final visualColor = dark ? AppColors.mintDeep : AppColors.sageDark;
 
     final String label;
     final String counter;
@@ -263,39 +261,45 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
       label = paused ? s.paused : s.phaseCue(_clock.phase.type);
       counter = '${_clock.phaseSecondsLeft}';
     }
-    final patternText = _pattern.phases
-        .map((p) => '${s.phaseName(p.type)} ${p.seconds}${s.secondsShort}')
-        .join('  ·  ');
+    final patternText = _pattern.phases.map((p) => '${s.phaseName(p.type)} ${p.seconds}').join(' · ');
+
+    Widget toggle(IconData on, IconData off, bool active, String tip, VoidCallback onTap) => IconButton(
+      tooltip: tip,
+      isSelected: active,
+      onPressed: onTap,
+      icon: Icon(active ? on : off, color: active ? accent : context.softText),
+    );
 
     return Column(
       key: const ValueKey('session'),
       children: [
-        // Top bar: back + toggles
+        // Minimal top bar
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 6, 16, 0),
+          padding: const EdgeInsets.fromLTRB(4, 4, 8, 0),
           child: Row(
             children: [
-              IconButton(tooltip: s.endSession, onPressed: _endPressed, icon: const Icon(Icons.arrow_back_rounded)),
+              IconButton(tooltip: s.endSession, onPressed: _endPressed, icon: const Icon(Icons.close_rounded)),
               const Spacer(),
-              ToggleTile(
-                icon: Icons.music_note_rounded,
-                active: _audioOn,
-                tooltip: _audioOn ? s.audioGuideOff : s.audioGuideOn,
-                onTap: _toggleAudio,
+              toggle(
+                Icons.music_note_rounded,
+                Icons.music_off_rounded,
+                _audioOn,
+                _audioOn ? s.audioGuideOff : s.audioGuideOn,
+                _toggleAudio,
               ),
-              const SizedBox(width: 8),
-              ToggleTile(
-                icon: Icons.vibration_rounded,
-                active: _hapticsOn,
-                tooltip: _hapticsOn ? s.hapticsOff : s.hapticsOn,
-                onTap: () => setState(() => _hapticsOn = !_hapticsOn),
+              toggle(
+                Icons.vibration_rounded,
+                Icons.mobile_off_rounded,
+                _hapticsOn,
+                _hapticsOn ? s.hapticsOff : s.hapticsOn,
+                () => setState(() => _hapticsOn = !_hapticsOn),
               ),
-              const SizedBox(width: 8),
-              ToggleTile(
-                icon: Icons.record_voice_over_rounded,
-                active: _voiceOn,
-                tooltip: _voiceOn ? s.voiceOff : s.voiceOn,
-                onTap: () {
+              toggle(
+                Icons.record_voice_over_rounded,
+                Icons.voice_over_off_rounded,
+                _voiceOn,
+                _voiceOn ? s.voiceOff : s.voiceOn,
+                () {
                   setState(() => _voiceOn = !_voiceOn);
                   if (!_voiceOn) _voice.stop();
                 },
@@ -303,34 +307,21 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
             ],
           ),
         ),
-        const SizedBox(height: 10),
-        Text(context.l(t.name), style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
-        const SizedBox(height: 6),
-        Overline(preparing ? s.getReady : s.roundOf(round, totalRounds)),
-        const SizedBox(height: 10),
-        SizedBox(
-          width: 150,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: _clock.sessionProgress,
-              minHeight: 4,
-              color: accent,
-              backgroundColor: accent.withValues(alpha: 0.18),
-            ),
-          ),
+        Text(context.l(t.name), style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
+        const SizedBox(height: 2),
+        Text(
+          preparing
+              ? ' '
+              : s.roundOf(round, totalRounds) + (_gentle && t.pattern.hasHolds ? ' · ${s.gentleModeOn}' : ''),
+          style: theme.textTheme.bodySmall?.copyWith(color: context.softText),
         ),
-        if (_gentle && t.pattern.hasHolds) ...[
-          const SizedBox(height: 6),
-          Text(s.gentleModeOn, style: theme.textTheme.labelSmall?.copyWith(color: context.softText)),
-        ],
-        // Shape tracer
+        // The guide
         Expanded(
           child: LayoutBuilder(
             builder: (context, box) {
-              final size = (box.maxWidth * 0.86 < box.maxHeight ? box.maxWidth * 0.86 : box.maxHeight).clamp(
+              final size = (box.maxWidth * 0.82 < box.maxHeight ? box.maxWidth * 0.82 : box.maxHeight).clamp(
                 120.0,
-                380.0,
+                360.0,
               );
               return Center(
                 child: Semantics(
@@ -341,99 +332,62 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
                     pattern: _pattern,
                     phaseIndex: preparing ? 0 : _clock.phaseIndex,
                     phaseProgress: preparing ? 0 : _clock.phaseProgress,
-                    expansion: preparing ? 0.1 + 0.1 * (_prepElapsed % 1) : _clock.expansion,
-                    color: visualColor,
+                    expansion: preparing ? 0.1 : _clock.expansion,
+                    color: dark ? AppColors.mintDeep : AppColors.sageDark,
                   ),
                 ),
               );
             },
           ),
         ),
-        // Bottom panel
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: TintCard(
-            tint: dark ? AppColors.forestSoft : AppColors.mint,
-            strength: dark ? 1.4 : 1,
-            radius: 28,
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-            child: Column(
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (c, a) => FadeTransition(
-                    opacity: a,
-                    child: SlideTransition(
-                      position: Tween(begin: const Offset(0, 0.4), end: Offset.zero).animate(a),
-                      child: c,
-                    ),
-                  ),
-                  child: Overline(label, key: ValueKey(label), color: dark ? AppColors.cream : AppColors.forest),
-                ),
-                const SizedBox(height: 4),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  transitionBuilder: (c, a) => ScaleTransition(scale: Tween(begin: 0.8, end: 1.0).animate(a), child: c),
-                  child: Text(
-                    counter,
-                    key: ValueKey(counter + label),
-                    style: theme.textTheme.displayMedium?.copyWith(
-                      fontSize: 56,
-                      fontWeight: FontWeight.w800,
-                      color: accent,
-                      height: 1.1,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  patternText,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(color: context.softText),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Tooltip(
-                          message: s.endSession,
-                          child: TextButton.icon(
-                            onPressed: _endPressed,
-                            icon: const Icon(Icons.stop_rounded, size: 20),
-                            label: Text(s.end),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 64,
-                      height: 64,
-                      child: IconButton.filled(
-                        tooltip: paused ? s.resume : s.pause,
-                        iconSize: 32,
-                        style: IconButton.styleFrom(
-                          backgroundColor: accent,
-                          foregroundColor: dark ? AppColors.forest : Colors.white,
-                        ),
-                        onPressed: paused ? _resume : _pause,
-                        icon: Icon(paused ? Icons.play_arrow_rounded : Icons.pause_rounded),
-                      ),
-                    ),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          s.timeLeft(formatClock(_clock.remainingSeconds)),
-                          style: theme.textTheme.labelLarge?.copyWith(color: context.softText),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+        // Phase + count
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Text(label, key: ValueKey(label), style: theme.textTheme.headlineMedium),
+        ),
+        Text(
+          counter,
+          style: theme.textTheme.displayMedium?.copyWith(fontWeight: FontWeight.w700, color: accent, height: 1.15),
+        ),
+        Text(patternText, style: theme.textTheme.bodySmall?.copyWith(color: context.softText)),
+        const SizedBox(height: 22),
+        SizedBox.square(
+          dimension: 68,
+          child: IconButton.filled(
+            tooltip: paused ? s.resume : s.pause,
+            iconSize: 32,
+            style: IconButton.styleFrom(
+              backgroundColor: accent,
+              foregroundColor: dark ? AppColors.forest : Colors.white,
             ),
+            onPressed: paused ? _resume : _pause,
+            icon: Icon(paused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+          ),
+        ),
+        const SizedBox(height: 4),
+        TextButton(onPressed: _endPressed, child: Text(s.endSession)),
+        // Session progress
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: _clock.sessionProgress,
+                    minHeight: 4,
+                    color: accent,
+                    backgroundColor: accent.withValues(alpha: 0.16),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                formatClock(_clock.remainingSeconds),
+                style: theme.textTheme.labelMedium?.copyWith(color: context.softText),
+              ),
+            ],
           ),
         ),
       ],
@@ -484,8 +438,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
           ],
         ),
         const SizedBox(height: 12),
-        TintCard(
-          tint: challenge.done ? AppColors.mintDeep : AppColors.sun,
+        SoftCard(
           child: Row(
             children: [
               Icon(challenge.done ? Icons.emoji_events_rounded : challenge.def.icon),

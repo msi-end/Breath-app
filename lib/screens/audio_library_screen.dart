@@ -23,7 +23,6 @@ class AudioLibraryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(s.downloadedAudio)),
       body: NatureBackground(
-        showHills: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
           children: [

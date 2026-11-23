@@ -25,7 +25,6 @@ class _TechniquesScreenState extends State<TechniquesScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(s.breathingTechniques)),
       body: NatureBackground(
-        showHills: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
           children: [
