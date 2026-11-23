@@ -61,6 +61,11 @@ android {
 
     buildTypes {
         release {
+            // Code shrinking/obfuscation (R8) is a common cause of release-only
+            // crashes in plugins and makes crash reports unreadable. The size
+            // saving is small for this app, so keep release builds unshrunk.
+            isMinifyEnabled = false
+            isShrinkResources = false
             signingConfig =
                 if (hasReleaseKeystore) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }

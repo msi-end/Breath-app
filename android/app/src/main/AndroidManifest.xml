@@ -6,11 +6,23 @@
 
     <application
         android:label="BreatheCare"
-        android:name="${applicationName}"
+        android:name=".BreatheCareApplication"
         android:icon="@mipmap/ic_launcher">
+        <!-- Launcher: opens MainActivity, or first shows details of a previous crash. -->
+        <activity
+            android:name=".LaunchActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
         <activity
             android:name=".MainActivity"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleTop"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
@@ -25,10 +37,6 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
         </activity>
         <!-- AdMob App ID. This is Google's public TEST app id.
              TODO: replace with your own AdMob App ID before publishing. -->
