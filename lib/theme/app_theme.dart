@@ -180,6 +180,13 @@ class AppTheme {
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         },
       ),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        titleTextStyle: text.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: scheme.onSurface),
+        subtitleTextStyle: text.bodySmall?.copyWith(color: scheme.onSurface.withValues(alpha: 0.65)),
+        iconColor: scheme.onSurface,
+        minVerticalPadding: 12,
+      ),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant, space: 1),
     );
   }

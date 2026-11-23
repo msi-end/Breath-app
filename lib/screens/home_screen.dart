@@ -283,91 +283,11 @@ class _TechniqueCarousel extends StatelessWidget {
         clipBehavior: Clip.none,
         itemCount: techniques.length,
         separatorBuilder: (_, _) => const SizedBox(width: 12),
-        itemBuilder: (context, i) => _TechniqueTile(technique: techniques[i]),
-      ),
-    );
-  }
-}
-
-class _TechniqueTile extends StatelessWidget {
-  const _TechniqueTile({required this.technique});
-
-  final Technique technique;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = technique;
-    final s = context.s;
-    final theme = Theme.of(context);
-    final dark = context.isDark;
-    final top = dark ? Color.lerp(t.color, AppColors.night, 0.55)! : Color.lerp(t.color, Colors.white, 0.45)!;
-    final bottom = dark ? Color.lerp(t.color, AppColors.night, 0.75)! : t.color;
-    final fg = dark ? AppColors.cream : AppColors.forest;
-    return SizedBox(
-      width: 160,
-      child: SoftCard(
-        padding: EdgeInsets.zero,
-        radius: 26,
-        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [top, bottom]),
-        onTap: () => openTechnique(context, t),
-        child: Stack(
-          children: [
-            Positioned(right: -18, top: -14, child: Icon(t.icon, size: 110, color: fg.withValues(alpha: 0.07))),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: dark ? 0.1 : 0.6),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(t.icon, size: 22, color: fg),
-                  ),
-                  const Spacer(),
-                  Text(
-                    context.l(t.name),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium?.copyWith(color: fg, height: 1.2),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          s.minutesCount(t.recommendedMinutes),
-                          style: theme.textTheme.labelMedium?.copyWith(color: fg.withValues(alpha: 0.7)),
-                        ),
-                      ),
-                      Material(
-                        color: dark ? AppColors.mintDeep : AppColors.forest,
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: () => startSession(context, t),
-                          child: Tooltip(
-                            message: s.startBreathing,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Icon(
-                                Icons.play_arrow_rounded,
-                                size: 20,
-                                color: dark ? AppColors.forest : AppColors.cream,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+        itemBuilder: (context, i) => TechniqueTile(
+          technique: techniques[i],
+          width: 160,
+          onTap: () => openTechnique(context, techniques[i]),
+          onPlay: () => startSession(context, techniques[i]),
         ),
       ),
     );

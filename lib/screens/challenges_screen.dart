@@ -56,101 +56,132 @@ class ChallengesScreen extends StatelessWidget {
           children: [
             SoftCard(
               padding: const EdgeInsets.all(22),
-              child: Column(
-                children: [
-                  Text(
-                    s.todaysChallenge.toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 1.2, color: context.softText),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: 132,
-                    height: 132,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox.expand(
-                          child: TweenAnimationBuilder<double>(
-                            tween: Tween(begin: 0, end: p.fraction),
-                            duration: const Duration(milliseconds: 900),
-                            curve: Curves.easeOutCubic,
-                            builder: (_, v, _) => CircularProgressIndicator(
-                              value: v,
-                              strokeWidth: 10,
-                              strokeCap: StrokeCap.round,
-                              backgroundColor: AppColors.sun.withValues(alpha: 0.35),
-                              color: p.done ? AppColors.sageDark : const Color(0xFFE0A84F),
-                            ),
-                          ),
+              radius: 30,
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF3A6B4B), AppColors.forest, Color(0xFF1B3324)],
+              ),
+              child: Theme(
+                data: theme.copyWith(
+                  textTheme: theme.textTheme.apply(bodyColor: AppColors.cream, displayColor: AppColors.cream),
+                  iconTheme: const IconThemeData(color: AppColors.cream),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        s.todaysChallenge,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppColors.mint,
+                          fontWeight: FontWeight.w700,
                         ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(p.done ? Icons.emoji_events_rounded : p.def.icon, size: 34),
-                            const SizedBox(height: 4),
-                            Text(s.challengeProgressText(p), style: theme.textTheme.labelLarge),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(context.l(p.def.title), style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
-                  const SizedBox(height: 6),
-                  Text(
-                    context.l(p.def.description),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: context.softText),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: (p.done ? AppColors.mintDeep : AppColors.sun).withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      p.done ? s.challengeCompleted : s.challengeInProgress,
-                      style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  if (!p.done) ...[
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: () => startSession(
-                          context,
-                          suggestion,
-                          minutes: p.def.kind == ChallengeKind.totalMinutes ? 5 : null,
-                        ),
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: Text(s.startWith(context.l(suggestion.name))),
                       ),
                     ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: 132,
+                      height: 132,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox.expand(
+                            child: TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0, end: p.fraction),
+                              duration: const Duration(milliseconds: 900),
+                              curve: Curves.easeOutCubic,
+                              builder: (_, v, _) => CircularProgressIndicator(
+                                value: v,
+                                strokeWidth: 10,
+                                strokeCap: StrokeCap.round,
+                                backgroundColor: Colors.white.withValues(alpha: 0.14),
+                                color: p.done ? AppColors.mint : AppColors.sun,
+                              ),
+                            ),
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(p.done ? Icons.emoji_events_rounded : p.def.icon, size: 34),
+                              const SizedBox(height: 4),
+                              Text(
+                                s.challengeProgressText(p),
+                                style: theme.textTheme.labelLarge?.copyWith(color: AppColors.cream),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      context.l(p.def.title),
+                      style: theme.textTheme.headlineSmall?.copyWith(color: AppColors.cream),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      context.l(p.def.description),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.cream.withValues(alpha: 0.78)),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: (p.done ? AppColors.mint : AppColors.sun).withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        p.done ? s.challengeCompleted : s.challengeInProgress,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.forest,
+                        ),
+                      ),
+                    ),
+                    if (!p.done) ...[
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.mint,
+                            foregroundColor: AppColors.forest,
+                          ),
+                          onPressed: () => startSession(
+                            context,
+                            suggestion,
+                            minutes: p.def.kind == ChallengeKind.totalMinutes ? 5 : null,
+                          ),
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: Text(s.startWith(context.l(suggestion.name))),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 14),
-            Row(
+            StatGrid(
               children: [
-                Expanded(
-                  child: StatTile(
-                    icon: Icons.local_fire_department_outlined,
-                    value: '$streak',
-                    label: s.challengeStreakLabel,
-                    color: AppColors.sun,
-                  ),
+                StatTile(
+                  icon: Icons.local_fire_department_outlined,
+                  value: '$streak',
+                  label: s.challengeStreakLabel,
+                  color: AppColors.sun,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: StatTile(
-                    icon: Icons.task_alt_rounded,
-                    value: '$done30/$total30',
-                    label: s.completedLast30,
-                    color: AppColors.mint,
-                  ),
+                StatTile(
+                  icon: Icons.task_alt_rounded,
+                  value: '$done30/$total30',
+                  label: s.completedLast30,
+                  color: AppColors.mint,
                 ),
               ],
             ),

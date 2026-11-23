@@ -10,6 +10,8 @@ Free, ad-supported (Google AdMob), English + Hindi, light & dark themes, and ful
 | ![](docs/screenshots/home.png) | ![](docs/screenshots/home-more.png) | ![](docs/screenshots/home-dark.png) |
 | **Guided session** | **Session (dark)** | **Settings** |
 | ![](docs/screenshots/session.png) | ![](docs/screenshots/session-dark.png) | ![](docs/screenshots/settings.png) |
+| **Techniques** | **Progress** | **Daily Challenges** |
+| ![](docs/screenshots/techniques.png) | ![](docs/screenshots/progress.png) | ![](docs/screenshots/challenges.png) |
 
 <sub>Screenshots are rendered from widget tests.</sub>
 

@@ -39,7 +39,7 @@ class SettingsScreen extends StatelessWidget {
             _Group(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.translate_rounded),
+                  leading: const IconBadge(Icons.translate_rounded, color: AppColors.sky, size: 38),
                   title: Text(s.language),
                   subtitle: Text(settings.lang == 'hi' ? 'हिन्दी' : 'English'),
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -52,9 +52,9 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.palette_outlined),
+                          const IconBadge(Icons.palette_outlined, color: AppColors.blush, size: 38),
                           const SizedBox(width: 16),
-                          Text(s.theme, style: theme.textTheme.bodyLarge),
+                          Text(s.theme, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -80,14 +80,14 @@ class SettingsScreen extends StatelessWidget {
             _Group(
               children: [
                 SwitchListTile(
-                  secondary: const Icon(Icons.record_voice_over_outlined),
+                  secondary: const IconBadge(Icons.record_voice_over_outlined, color: AppColors.mintDeep, size: 38),
                   title: Text(s.voiceGuidance),
                   subtitle: Text(s.voiceGuidanceSub),
                   value: settings.voiceGuidance,
                   onChanged: settings.setVoiceGuidance,
                 ),
                 ListTile(
-                  leading: const Icon(Icons.volume_up_outlined),
+                  leading: const IconBadge(Icons.volume_up_outlined, color: AppColors.mintDeep, size: 38),
                   title: Text(s.voiceVolume),
                   subtitle: Slider(
                     value: settings.voiceVolume,
@@ -97,21 +97,21 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
                 SwitchListTile(
-                  secondary: const Icon(Icons.vibration_rounded),
+                  secondary: const IconBadge(Icons.vibration_rounded, color: AppColors.lavender, size: 38),
                   title: Text(s.hapticCues),
                   subtitle: Text(s.hapticCuesSub),
                   value: settings.haptics,
                   onChanged: settings.setHaptics,
                 ),
                 SwitchListTile(
-                  secondary: const Icon(Icons.air_rounded),
+                  secondary: const IconBadge(Icons.air_rounded, color: AppColors.sky, size: 38),
                   title: Text(s.gentleModeDefault),
                   subtitle: Text(s.gentleModeSub),
                   value: settings.gentleModeDefault,
                   onChanged: settings.setGentleModeDefault,
                 ),
                 ListTile(
-                  leading: const Icon(Icons.download_for_offline_outlined),
+                  leading: const IconBadge(Icons.download_for_offline_outlined, color: AppColors.sun, size: 38),
                   title: Text(s.downloadedAudio),
                   subtitle: Text(s.downloadedCount(audio.downloadedIds.length, formatBytes(audio.totalBytes))),
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -123,7 +123,7 @@ class SettingsScreen extends StatelessWidget {
             _Group(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.account_circle_outlined),
+                  leading: const IconBadge(Icons.account_circle_outlined, color: AppColors.mint, size: 38),
                   title: Text(account.signedIn ? s.signedInAs(account.userId ?? '') : s.accountAndBackup),
                   subtitle: Text(account.signedIn ? s.backupAvailable : s.accountOptional),
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -135,26 +135,26 @@ class SettingsScreen extends StatelessWidget {
             _Group(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.privacy_tip_outlined),
+                  leading: const IconBadge(Icons.privacy_tip_outlined, color: AppColors.lavender, size: 38),
                   title: Text(s.privacyPolicy),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => push(const InfoScreen(kind: InfoKind.privacy)),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.description_outlined),
+                  leading: const IconBadge(Icons.description_outlined, color: AppColors.sky, size: 38),
                   title: Text(s.terms),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => push(const InfoScreen(kind: InfoKind.terms)),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.spa_outlined),
+                  leading: const IconBadge(Icons.spa_outlined, color: AppColors.mintDeep, size: 38),
                   title: Text(s.aboutApp),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => push(const InfoScreen(kind: InfoKind.about)),
                 ),
                 if (AdsService.instance.privacyOptionsRequired)
                   ListTile(
-                    leading: const Icon(Icons.ads_click_outlined),
+                    leading: const IconBadge(Icons.ads_click_outlined, color: AppColors.sun, size: 38),
                     title: Text(s.adPrivacy),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => AdsService.instance.showPrivacyOptions(),
@@ -165,7 +165,7 @@ class SettingsScreen extends StatelessWidget {
             _Group(
               children: [
                 ListTile(
-                  leading: Icon(Icons.delete_forever_outlined, color: theme.colorScheme.error),
+                  leading: const IconBadge(Icons.delete_forever_outlined, color: AppColors.blush, size: 38),
                   title: Text(s.deleteMyData, style: TextStyle(color: theme.colorScheme.error)),
                   subtitle: Text(s.deleteMyDataSub),
                   onTap: () => _confirmDeleteAll(context),

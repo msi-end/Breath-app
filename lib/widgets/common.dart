@@ -96,81 +96,7 @@ class _SoftCardState extends State<SoftCard> {
   }
 }
 
-/// A simple tappable row: icon, title, optional subtitle, trailing widget.
-class NavRow extends StatelessWidget {
-  const NavRow({
-    super.key,
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-    this.iconColor,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-  final Color? iconColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            IconBadge(icon, color: iconColor ?? AppColors.mint, size: 40),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                  if (subtitle != null)
-                    Text(
-                      subtitle!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(color: context.softText),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            trailing ?? Icon(Icons.chevron_right_rounded, color: context.softText),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Groups rows inside one card with thin dividers between them.
-class RowGroup extends StatelessWidget {
-  const RowGroup({super.key, required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final items = <Widget>[];
-    for (var i = 0; i < children.length; i++) {
-      if (i > 0) items.add(const Divider(height: 1, indent: 70));
-      items.add(children[i]);
-    }
-    return SoftCard(
-      padding: EdgeInsets.zero,
-      child: Column(children: items),
-    );
-  }
-}
-
-/// Coloured rounded icon badge.
+/// Round icon badge on a soft pastel.
 class IconBadge extends StatelessWidget {
   const IconBadge(this.icon, {super.key, required this.color, this.size = 48});
 
@@ -185,13 +111,18 @@ class IconBadge extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: dark ? 0.22 : 0.45),
-        borderRadius: BorderRadius.circular(size * 0.36),
+        color: dark ? color.withValues(alpha: 0.22) : Color.alphaBlend(color.withValues(alpha: 0.5), Colors.white),
+        shape: BoxShape.circle,
       ),
-      child: Icon(icon, size: size * 0.52, color: dark ? AppColors.cream : AppColors.forest),
+      child: Icon(icon, size: size * 0.48, color: dark ? AppColors.cream : AppColors.forest),
     );
   }
 }
+
+/// Pastel background used by tiles (mood, stats, quick actions).
+Color pastelOf(BuildContext context, Color c) => context.isDark
+    ? Color.alphaBlend(c.withValues(alpha: 0.14), AppColors.nightCard)
+    : Color.alphaBlend(c.withValues(alpha: 0.38), Colors.white);
 
 class FavoriteButton extends StatelessWidget {
   const FavoriteButton({super.key, required this.techniqueId});
@@ -245,10 +176,10 @@ class PatternChips extends StatelessWidget {
       children: [
         for (final p in pattern.phases)
           Container(
-            padding: EdgeInsets.symmetric(horizontal: dense ? 8 : 10, vertical: dense ? 3 : 5),
+            padding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
             decoration: BoxDecoration(
               color: (p.isHold ? AppColors.sky : AppColors.mint).withValues(alpha: context.isDark ? 0.18 : 0.7),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               '${s.phaseShort(p.type)} ${p.seconds}${s.secondsShort}',
@@ -256,67 +187,6 @@ class PatternChips extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-/// List card for a technique.
-class TechniqueCard extends StatelessWidget {
-  const TechniqueCard({super.key, required this.technique, required this.onTap, this.trailing});
-
-  final Technique technique;
-  final VoidCallback onTap;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = technique;
-    final theme = Theme.of(context);
-    return SoftCard(
-      onTap: onTap,
-      padding: const EdgeInsets.fromLTRB(16, 14, 6, 14),
-      child: Row(
-        children: [
-          IconBadge(t.icon, color: t.color, size: 52),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(context.l(t.name), style: theme.textTheme.titleMedium),
-                const SizedBox(height: 2),
-                Text(
-                  context.l(t.tagline),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(color: context.softText),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.schedule_rounded, size: 14, color: context.softText),
-                    const SizedBox(width: 4),
-                    Text(
-                      context.s.minutesCount(t.recommendedMinutes),
-                      style: theme.textTheme.labelSmall?.copyWith(color: context.softText),
-                    ),
-                    if (t.tags.contains(TechniqueTag.beginner)) ...[
-                      const SizedBox(width: 10),
-                      Icon(Icons.eco_rounded, size: 14, color: context.softText),
-                      const SizedBox(width: 4),
-                      Text(
-                        context.s.beginnerFriendly,
-                        style: theme.textTheme.labelSmall?.copyWith(color: context.softText),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-          trailing ?? FavoriteButton(techniqueId: t.id),
-        ],
-      ),
     );
   }
 }
@@ -398,17 +268,125 @@ class StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final c = color ?? AppColors.mint;
     return SoftCard(
+      color: pastelOf(context, c),
+      radius: 26,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconBadge(icon, color: color ?? AppColors.mint, size: 38),
-          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: context.isDark ? c.withValues(alpha: 0.22) : Colors.white.withValues(alpha: 0.75),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 20),
+          ),
+          const SizedBox(height: 14),
           Text(value, style: theme.textTheme.headlineSmall),
           const SizedBox(height: 2),
           Text(label, style: theme.textTheme.bodySmall?.copyWith(color: context.softText)),
         ],
+      ),
+    );
+  }
+}
+
+/// Tall gradient card for a technique, with a quick-start play button.
+class TechniqueTile extends StatelessWidget {
+  const TechniqueTile({super.key, required this.technique, required this.onTap, required this.onPlay, this.width});
+
+  final Technique technique;
+  final VoidCallback onTap;
+  final VoidCallback onPlay;
+  final double? width;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = technique;
+    final s = context.s;
+    final theme = Theme.of(context);
+    final dark = context.isDark;
+    final top = dark ? Color.lerp(t.color, AppColors.night, 0.55)! : Color.lerp(t.color, Colors.white, 0.45)!;
+    final bottom = dark ? Color.lerp(t.color, AppColors.night, 0.75)! : t.color;
+    final fg = dark ? AppColors.cream : AppColors.forest;
+    return SizedBox(
+      width: width,
+      child: SoftCard(
+        padding: EdgeInsets.zero,
+        radius: 26,
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [top, bottom]),
+        onTap: onTap,
+        child: Stack(
+          children: [
+            Positioned(right: -18, top: -14, child: Icon(t.icon, size: 110, color: fg.withValues(alpha: 0.07))),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: dark ? 0.1 : 0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(t.icon, size: 22, color: fg),
+                      ),
+                      const Spacer(),
+                      if (context.watch<ProgressStore>().isFavorite(t.id))
+                        Icon(Icons.favorite_rounded, size: 18, color: dark ? AppColors.blush : const Color(0xFFD9695F)),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    context.l(t.name),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(color: fg, height: 1.2),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          s.minutesCount(t.recommendedMinutes),
+                          style: theme.textTheme.labelMedium?.copyWith(color: fg.withValues(alpha: 0.7)),
+                        ),
+                      ),
+                      Material(
+                        color: dark ? AppColors.mintDeep : AppColors.forest,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: onPlay,
+                          child: Tooltip(
+                            message: s.startBreathing,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.play_arrow_rounded,
+                                size: 20,
+                                color: dark ? AppColors.forest : AppColors.cream,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
