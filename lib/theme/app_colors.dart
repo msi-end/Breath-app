@@ -19,10 +19,10 @@ class AppColors {
   static const lavender = Color(0xFFCFC8EA);
 
   // Dark theme surfaces
-  static const night = Color(0xFF101814);
-  static const nightSurface = Color(0xFF17221C);
-  static const nightCard = Color(0xFF1F2D25);
-  static const nightLine = Color(0xFF2C3D33);
+  static const night = Color(0xFF0B120E);
+  static const nightSurface = Color(0xFF121C16);
+  static const nightCard = Color(0xFF17231C);
+  static const nightLine = Color(0xFF26382D);
 }
 
 /// Theme-aware accessors used throughout the UI.

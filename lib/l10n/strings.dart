@@ -417,6 +417,37 @@ class AppStrings {
     AccountResult.noBackup => _t('No backup found for this account yet.', 'इस अकाउंट का अभी कोई बैकअप नहीं मिला।'),
     _ => _t('Something went wrong. Please try again.', 'कुछ गड़बड़ हुई। कृपया फिर से कोशिश करें।'),
   };
+
+  // Redesign
+  String get heroHeadline => _t('Breathe in calm.\nLet the day soften.', 'शांति भीतर लें।\nदिन को हल्का होने दें।');
+  String todayPractice(String name, int m) => _t('Today: $name · $m min', 'आज: $name · $m मिनट');
+  String get startSession => _t('Start session', 'सत्र शुरू करें');
+  String get findYourRhythm => _t('Find your rhythm', 'अपनी लय खोजें');
+  String get explorePractices => _t('Explore practices', 'अभ्यास देखें');
+  String get explorePracticesSub => _t('Pick a rhythm for this moment.', 'इस पल के लिए एक लय चुनें।');
+  String get allTechniquesOverline => _t('All 10 techniques', 'सभी 10 तकनीकें');
+  String get breathingLibrary => _t('Breathing library', 'श्वास संग्रह');
+  String get checkIn => _t('Check in', 'मन की बात');
+  String get needCalmNow => _t('Need calm now?', 'अभी शांति चाहिए?');
+  String roundOf(int i, int n) => _t('Round $i of $n', 'चक्र $i / $n');
+  String get getReady => _t('Get ready', 'तैयार हो जाएँ');
+  String phaseName(PhaseType t) => switch (t) {
+    PhaseType.inhale => _t('Inhale', 'साँस लें'),
+    PhaseType.holdIn => _t('Hold', 'रोकें'),
+    PhaseType.exhale => _t('Exhale', 'साँस छोड़ें'),
+    PhaseType.holdOut => _t('Rest', 'ठहरें'),
+  };
+  String get audioGuideOn => _t('Play audio guide', 'ऑडियो गाइड चलाएँ');
+  String get audioGuideOff => _t('Stop audio guide', 'ऑडियो गाइड रोकें');
+  String get audioGuideNotDownloaded => _t(
+    'Download this technique’s audio guide from its detail page to play it here.',
+    'यहाँ चलाने के लिए इस तकनीक का ऑडियो गाइड उसके विवरण पेज से डाउनलोड करें।',
+  );
+  String get hapticsOn => _t('Turn vibration cues on', 'कंपन संकेत चालू करें');
+  String get hapticsOff => _t('Turn vibration cues off', 'कंपन संकेत बंद करें');
+  String get end => _t('End', 'समाप्त');
+  String get jumpBackIn => _t('Jump back in', 'फिर से शुरू करें');
+  String get progressTooltip => _t('Your progress', 'आपकी प्रगति');
 }
 
 extension AppStringsContext on BuildContext {

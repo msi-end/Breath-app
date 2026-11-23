@@ -9,7 +9,7 @@ import '../services/breathing_clock.dart';
 import '../services/settings_controller.dart';
 import '../theme/app_colors.dart';
 import '../widgets/audio_guidance_card.dart';
-import '../widgets/breathing_visual.dart';
+import '../widgets/breath_path_visual.dart';
 import '../widgets/common.dart';
 import 'navigation.dart';
 
@@ -244,12 +244,14 @@ class _PreviewLotusState extends State<_PreviewLotus> with SingleTickerProviderS
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        BreathingVisual(
+        BreathPathVisual(
           size: 190,
+          pattern: _clock.pattern,
+          phaseIndex: _clock.phaseIndex,
+          phaseProgress: _clock.phaseProgress,
           expansion: _clock.expansion,
-          rotation: _clock.elapsed * 0.04,
-          color: widget.technique.color,
-          child: Icon(widget.technique.icon, color: AppColors.forest, size: 30),
+          color: context.isDark ? AppColors.mintDeep : AppColors.forestSoft,
+          child: Icon(widget.technique.icon, size: 26),
         ),
         const SizedBox(height: 6),
         Text(s.phaseCue(_clock.phase.type), style: Theme.of(context).textTheme.labelLarge),

@@ -2,6 +2,7 @@ import 'package:breathecare/app.dart';
 import 'package:breathecare/data/moods.dart';
 import 'package:breathecare/data/techniques.dart';
 import 'package:breathecare/screens/emergency_calm_screen.dart';
+import 'package:breathecare/screens/home_screen.dart';
 import 'package:breathecare/screens/mood_results_screen.dart';
 import 'package:breathecare/screens/technique_detail_screen.dart';
 import 'package:breathecare/screens/breathing_session_screen.dart';
@@ -37,6 +38,9 @@ void usePhone(WidgetTester tester) {
   tester.view.physicalSize = const Size(1170, 2532); // 390 x 844 logical
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
+  // Looping ambient animations honour "remove animations"; keeps pumpAndSettle finite.
+  tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+  addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 }
 
 void main() {
@@ -58,7 +62,11 @@ void main() {
     usePhone(tester);
     await tester.pumpWidget(await buildApp());
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Mood-Based Breathing'));
+    await tester.scrollUntilVisible(
+      find.text('Mood-Based Breathing'),
+      250,
+      scrollable: find.descendant(of: find.byType(HomeScreen), matching: find.byType(Scrollable)).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Mood-Based Breathing'));
     await tester.pumpAndSettle();
@@ -99,8 +107,8 @@ void main() {
     expect(find.text('Pause'), findsNothing); // icon only, tooltip
     await tester.tap(find.byTooltip('Pause'));
     await tester.pump();
-    expect(find.text('Paused'), findsOneWidget);
-    await tester.tap(find.text('End Session'));
+    expect(find.text('PAUSED'), findsOneWidget);
+    await tester.tap(find.text('End'));
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Well done'), findsOneWidget);
     final store = Provider.of<ProgressStore>(tester.element(find.text('Well done')), listen: false);

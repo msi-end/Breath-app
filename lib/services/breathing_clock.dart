@@ -54,6 +54,15 @@ class BreathingClock {
 
   BreathPhase get phase => _locate().phase;
 
+  /// Index of the current phase within the pattern.
+  int get phaseIndex => _locate().index;
+
+  /// 1-based number of the breath cycle in progress.
+  int get round => (elapsed ~/ cycleSeconds) + 1;
+
+  /// Total number of breath cycles, or null for open-ended sessions.
+  int? get totalRounds => plannedSeconds == null ? null : plannedSeconds! ~/ cycleSeconds;
+
   /// A counter that changes every time a new phase begins.
   int get phaseSerial => (elapsed ~/ cycleSeconds) * pattern.phases.length + _locate().index;
 

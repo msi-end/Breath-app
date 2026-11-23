@@ -17,7 +17,7 @@ import '../services/progress_store.dart';
 import '../services/settings_controller.dart';
 import '../services/voice_guide.dart';
 import '../theme/app_colors.dart';
-import '../widgets/breathing_visual.dart';
+import '../widgets/glow.dart';
 import '../widgets/nature_background.dart';
 
 /// Immediate, simple, hold-free breathing. Works offline and never shows ads.
@@ -124,7 +124,8 @@ class _EmergencyCalmScreenState extends State<EmergencyCalmScreen>
       },
       child: Scaffold(
         body: NatureBackground(
-          tint: dark ? const Color(0xFF1A2A2A) : const Color(0xFFDDEFF3),
+          tint: dark ? const Color(0xFF10222A) : const Color(0xFFDDEFF3),
+          fireflies: true,
           child: SafeArea(
             child: Column(
               children: [
@@ -178,11 +179,16 @@ class _EmergencyCalmScreenState extends State<EmergencyCalmScreen>
                                 Semantics(
                                   liveRegion: true,
                                   label: s.phaseCue(_clock.phase.type),
-                                  child: BreathingVisual(
-                                    size: visual,
-                                    expansion: _clock.expansion,
-                                    rotation: _total * 0.03,
-                                    color: dark ? AppColors.skyDeep : AppColors.sky,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      RippleRings(size: visual, color: dark ? AppColors.sky : AppColors.skyDeep),
+                                      GlowOrb(
+                                        size: visual * 0.92,
+                                        expansion: _clock.expansion,
+                                        color: dark ? AppColors.sky : AppColors.skyDeep,
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: 20),

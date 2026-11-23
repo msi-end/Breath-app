@@ -3,21 +3,44 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import 'glow.dart';
 
-/// Soft sky gradient with a gentle sun and rolling hills.
+/// Soft sky gradient with a gentle sun/moon and rolling hills. Optional
+/// drifting fireflies and slowly rippling glow rings add calm motion.
 class NatureBackground extends StatelessWidget {
-  const NatureBackground({super.key, required this.child, this.showHills = true, this.tint});
+  const NatureBackground({
+    super.key,
+    required this.child,
+    this.showHills = true,
+    this.tint,
+    this.fireflies = false,
+    this.ripples = false,
+  });
 
   final Widget child;
   final bool showHills;
   final Color? tint;
+  final bool fireflies;
+
+  /// Decorative ripple rings near the top-right and bottom-left corners.
+  final bool ripples;
 
   @override
   Widget build(BuildContext context) {
     final dark = context.isDark;
-    return CustomPaint(
-      painter: _NaturePainter(dark: dark, showHills: showHills, tint: tint),
-      child: child,
+    final painter = _NaturePainter(dark: dark, showHills: showHills, tint: tint);
+    if (!fireflies && !ripples) return CustomPaint(painter: painter, child: child);
+    final painted = CustomPaint(painter: painter);
+    return Stack(
+      children: [
+        Positioned.fill(child: painted),
+        if (ripples) ...[
+          const Positioned(top: -90, right: -110, child: RippleRings(size: 300)),
+          const Positioned(bottom: 40, left: -150, child: RippleRings(size: 260, period: Duration(seconds: 9))),
+        ],
+        if (fireflies) const Positioned.fill(child: Fireflies()),
+        Positioned.fill(child: child),
+      ],
     );
   }
 }
@@ -32,7 +55,7 @@ class _NaturePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    final top = tint ?? (dark ? const Color(0xFF16261F) : const Color(0xFFE3F3EA));
+    final top = tint ?? (dark ? const Color(0xFF12241B) : const Color(0xFFE3F3EA));
     final bottom = dark ? AppColors.night : AppColors.cream;
     canvas.drawRect(
       rect,

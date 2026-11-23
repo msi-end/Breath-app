@@ -4,7 +4,7 @@ import '../data/legal.dart';
 import '../l10n/l_text.dart';
 import '../l10n/strings.dart';
 import '../theme/app_colors.dart';
-import '../widgets/breathing_visual.dart';
+import '../widgets/logo.dart';
 import '../widgets/common.dart';
 import '../widgets/nature_background.dart';
 
@@ -32,14 +32,7 @@ class InfoScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
           children: [
             if (kind == InfoKind.about) ...[
-              const Center(
-                child: BreathingVisual(
-                  size: 160,
-                  expansion: 0.7,
-                  color: AppColors.sage,
-                  child: Icon(Icons.spa_rounded, size: 34, color: AppColors.forest),
-                ),
-              ),
+              const Center(child: BreatheCareLogo(size: 120, tile: true)),
               const SizedBox(height: 12),
               Text('BreatheCare', textAlign: TextAlign.center, style: theme.textTheme.headlineMedium),
               Text(

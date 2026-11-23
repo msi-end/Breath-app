@@ -11,6 +11,8 @@ import '../services/progress_store.dart';
 import '../theme/app_colors.dart';
 import '../widgets/banner_ad_slot.dart';
 import '../widgets/common.dart';
+import '../widgets/glow.dart';
+import '../widgets/logo.dart';
 import '../widgets/mood_picker_sheet.dart';
 import '../widgets/nature_background.dart';
 import 'navigation.dart';
@@ -24,6 +26,14 @@ Technique todaysTechnique() {
 
 const dailyGoalSeconds = 5 * 60;
 
+/// Techniques featured in the "Explore practices" grid, each with its tint.
+const _featured = [
+  ('box', AppColors.sky),
+  ('relax', AppColors.lavender),
+  ('equal', AppColors.blush),
+  ('focus', AppColors.mintDeep),
+];
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.onOpenProgress});
 
@@ -34,47 +44,93 @@ class HomeScreen extends StatelessWidget {
     final s = context.s;
     final store = context.watch<ProgressStore>();
     final theme = Theme.of(context);
-    final hour = DateTime.now().hour;
-    final greeting = hour < 12 ? s.goodMorning : (hour < 17 ? s.goodAfternoon : s.goodEvening);
+    var i = 0;
+    Widget enter(Widget child) => FadeSlideIn(
+      delay: Duration(milliseconds: 70 * i++),
+      child: child,
+    );
 
     return NatureBackground(
+      ripples: true,
       child: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
+            // Top bar
             Row(
               children: [
+                CircleIconButton(
+                  icon: Icons.favorite_border_rounded,
+                  tooltip: s.favorites,
+                  onPressed: () => openFavorites(context),
+                ),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(greeting, style: theme.textTheme.titleMedium?.copyWith(color: context.softText)),
-                      const SizedBox(height: 2),
-                      Text(s.welcomeTitle, style: theme.textTheme.headlineMedium),
+                      const BreatheCareLogo(size: 26),
+                      const SizedBox(width: 8),
+                      Text('BreatheCare', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
                     ],
                   ),
                 ),
-                IconButton.filledTonal(
-                  tooltip: s.favorites,
-                  onPressed: () => openFavorites(context),
-                  icon: const Icon(Icons.favorite_border_rounded),
-                ),
+                CircleIconButton(icon: Icons.insights_rounded, tooltip: s.progressTooltip, onPressed: onOpenProgress),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(s.welcomeSubtitle, style: theme.textTheme.bodyMedium?.copyWith(color: context.softText)),
             const SizedBox(height: 20),
-            _TodayCard(store: store),
+            enter(_HeroCard(store: store)),
             const SizedBox(height: 14),
-            const _EmergencyCalmButton(),
-            SectionHeader(s.explore),
-            const _QuickActions(),
-            SectionHeader(s.dailyChallenge, action: s.viewAll, onAction: () => openChallenges(context)),
+            enter(const _EmergencyCalmCard()),
+            const SizedBox(height: 26),
+            enter(
+              _SectionTitle(overline: s.findYourRhythm, title: s.explorePractices, subtitle: s.explorePracticesSub),
+            ),
+            const SizedBox(height: 14),
+            enter(const _PracticeGrid()),
+            const SizedBox(height: 12),
+            enter(
+              TintCard(
+                tint: AppColors.sage,
+                onTap: () => openTechniques(context),
+                padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Overline(s.allTechniquesOverline),
+                          const SizedBox(height: 4),
+                          Text(s.breathingLibrary, style: theme.textTheme.titleLarge),
+                        ],
+                      ),
+                    ),
+                    const _ArrowBubble(),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 26),
+            enter(Overline(s.checkIn)),
+            const SizedBox(height: 10),
+            enter(const _MoodStrip()),
+            const SizedBox(height: 26),
+            _SectionTitle(
+              overline: s.dailyChallengeSub,
+              title: s.dailyChallenge,
+              action: s.viewAll,
+              onAction: () => openChallenges(context),
+            ),
+            const SizedBox(height: 14),
             _ChallengePreview(store: store),
-            SectionHeader(s.recentlyPracticed),
+            const SizedBox(height: 26),
+            _SectionTitle(overline: s.jumpBackIn, title: s.recentlyPracticed),
+            const SizedBox(height: 14),
             _RecentList(store: store),
-            SectionHeader(s.thisWeek, action: s.viewProgress, onAction: onOpenProgress),
+            const SizedBox(height: 26),
+            _SectionTitle(overline: s.tabProgress, title: s.thisWeek, action: s.viewProgress, onAction: onOpenProgress),
+            const SizedBox(height: 14),
             _WeeklySummary(store: store, onTap: onOpenProgress),
             const BannerAdSlot(padding: EdgeInsets.only(top: 20)),
           ],
@@ -84,8 +140,58 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _TodayCard extends StatelessWidget {
-  const _TodayCard({required this.store});
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.overline, required this.title, this.subtitle, this.action, this.onAction});
+
+  final String overline;
+  final String title;
+  final String? subtitle;
+  final String? action;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Overline(overline),
+              const SizedBox(height: 4),
+              Semantics(header: true, child: Text(title, style: theme.textTheme.titleLarge)),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(subtitle!, style: theme.textTheme.bodyMedium?.copyWith(color: context.softText)),
+              ],
+            ],
+          ),
+        ),
+        if (action != null) TextButton(onPressed: onAction, child: Text(action!)),
+      ],
+    );
+  }
+}
+
+class _ArrowBubble extends StatelessWidget {
+  const _ArrowBubble();
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = accentOf(context);
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(color: accent.withValues(alpha: 0.18), shape: BoxShape.circle),
+      child: Icon(Icons.arrow_forward_rounded, size: 20, color: accent),
+    );
+  }
+}
+
+class _HeroCard extends StatelessWidget {
+  const _HeroCard({required this.store});
 
   final ProgressStore store;
 
@@ -96,88 +202,111 @@ class _TodayCard extends StatelessWidget {
     final todaySeconds = store.secondsOn(today());
     final fraction = (todaySeconds / dailyGoalSeconds).clamp(0.0, 1.0);
     final theme = Theme.of(context);
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12 ? s.goodMorning : (hour < 17 ? s.goodAfternoon : s.goodEvening);
     const onCard = AppColors.cream;
-    return SoftCard(
-      padding: const EdgeInsets.all(20),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [AppColors.forest, AppColors.forestSoft, AppColors.sageDark],
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2B5A3E), AppColors.forest, Color(0xFF17301F)],
+        ),
+        border: Border.all(color: AppColors.mintDeep.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(color: AppColors.forest.withValues(alpha: 0.25), blurRadius: 24, offset: const Offset(0, 10)),
+        ],
       ),
-      onTap: () => openTechnique(context, t),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: () => openTechnique(context, t),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 16, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      s.todaysBreathing.toUpperCase(),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: onCard.withValues(alpha: 0.75),
-                        letterSpacing: 1.2,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Overline(greeting, color: AppColors.mintDeep),
+                          const SizedBox(height: 10),
+                          Text(
+                            s.heroHeadline,
+                            style: theme.textTheme.headlineSmall?.copyWith(color: onCard, height: 1.2),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            s.todayPractice(context.l(t.name), t.recommendedMinutes),
+                            style: theme.textTheme.bodyMedium?.copyWith(color: onCard.withValues(alpha: 0.85)),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(context.l(t.name), style: theme.textTheme.headlineSmall?.copyWith(color: onCard)),
-                    const SizedBox(height: 4),
-                    Text(
-                      context.l(t.tagline),
-                      style: theme.textTheme.bodyMedium?.copyWith(color: onCard.withValues(alpha: 0.85)),
+                    const SizedBox(width: 8),
+                    // Pulsing orb inside today's goal ring
+                    SizedBox(
+                      width: 96,
+                      height: 96,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const GlowOrb(size: 96, color: AppColors.mintDeep, rings: false),
+                          SizedBox.square(
+                            dimension: 86,
+                            child: CircularProgressIndicator(
+                              value: fraction,
+                              strokeWidth: 3,
+                              strokeCap: StrokeCap.round,
+                              backgroundColor: onCard.withValues(alpha: 0.15),
+                              color: AppColors.mint,
+                            ),
+                          ),
+                          Semantics(
+                            label: s.practicedToday(s.durationText(todaySeconds)),
+                            child: Text(
+                              '${(todaySeconds / 60).floor()}/${dailyGoalSeconds ~/ 60}',
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: AppColors.forest,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-              SizedBox(
-                width: 64,
-                height: 64,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox.expand(
-                      child: CircularProgressIndicator(
-                        value: fraction,
-                        strokeWidth: 6,
-                        strokeCap: StrokeCap.round,
-                        backgroundColor: onCard.withValues(alpha: 0.18),
-                        color: AppColors.mint,
-                      ),
-                    ),
-                    Text(
-                      '${(todaySeconds / 60).floor()}/${dailyGoalSeconds ~/ 60}',
-                      style: theme.textTheme.labelLarge?.copyWith(color: onCard, fontWeight: FontWeight.w700),
-                    ),
-                  ],
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.mintDeep,
+                    foregroundColor: AppColors.forest,
+                    minimumSize: const Size(0, 46),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    shape: const StadiumBorder(),
+                  ),
+                  onPressed: () => startSession(context, t),
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: Text(s.startBreathing),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            todaySeconds == 0 ? s.noPracticeToday : s.practicedToday(s.durationText(todaySeconds)),
-            style: theme.textTheme.bodySmall?.copyWith(color: onCard.withValues(alpha: 0.85)),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.cream, foregroundColor: AppColors.forest),
-              onPressed: () => startSession(context, t),
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: Text(s.startBreathing),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _EmergencyCalmButton extends StatelessWidget {
-  const _EmergencyCalmButton();
+class _EmergencyCalmCard extends StatelessWidget {
+  const _EmergencyCalmCard();
 
   @override
   Widget build(BuildContext context) {
@@ -187,33 +316,32 @@ class _EmergencyCalmButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: s.emergencyCalm,
-      child: SoftCard(
-        color: dark ? const Color(0xFF2B2A33) : const Color(0xFFFCE9E1),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: TintCard(
+        tint: AppColors.blush,
+        strength: dark ? 1.2 : 1.1,
         onTap: () => openEmergencyCalm(context),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         child: Row(
           children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: dark ? AppColors.blush.withValues(alpha: 0.25) : AppColors.blush,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.favorite_rounded, color: dark ? AppColors.blush : const Color(0xFF9C4A3C)),
+            const GlowOrb(
+              size: 54,
+              color: AppColors.blush,
+              rings: false,
+              child: Icon(Icons.favorite_rounded, size: 20, color: Color(0xFF8E3F32)),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(s.emergencyCalm, style: theme.textTheme.titleMedium),
+                  Overline(s.needCalmNow, color: dark ? AppColors.blush : const Color(0xFF9C4A3C)),
                   const SizedBox(height: 2),
+                  Text(s.emergencyCalm, style: theme.textTheme.titleMedium),
                   Text(s.emergencyCalmSubtitle, style: theme.textTheme.bodySmall?.copyWith(color: context.softText)),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_rounded),
+            const _ArrowBubble(),
           ],
         ),
       ),
@@ -221,57 +349,102 @@ class _EmergencyCalmButton extends StatelessWidget {
   }
 }
 
-class _QuickActions extends StatelessWidget {
-  const _QuickActions();
+class _PracticeGrid extends StatelessWidget {
+  const _PracticeGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = context.s;
+    final dark = context.isDark;
+    final cards = [
+      for (final (id, tint) in _featured)
+        Builder(
+          builder: (context) {
+            final t = techniqueById(id)!;
+            final tagline = t.tags.take(2).map(s.tagLabel).join(' & ');
+            return TintCard(
+              tint: tint,
+              onTap: () => openTechnique(context, t),
+              padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: tint.withValues(alpha: dark ? 0.25 : 0.55),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(t.icon, size: 22),
+                      ),
+                      const Spacer(),
+                      Icon(Icons.arrow_forward_rounded, size: 18, color: context.softText),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    context.l(t.name),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    tagline,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: dark ? Color.lerp(tint, Colors.white, 0.2) : Color.lerp(tint, AppColors.forest, 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+    ];
+    return StatGrid(children: cards);
+  }
+}
+
+class _MoodStrip extends StatelessWidget {
+  const _MoodStrip();
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final items = [
-      (Icons.spa_outlined, s.exploreTechniques, s.exploreTechniquesSub, AppColors.mint, () => openTechniques(context)),
-      (Icons.mood_rounded, s.moodBreathing, s.moodBreathingSub, AppColors.sky, () => showMoodPicker(context)),
-      (
-        Icons.emoji_events_outlined,
-        s.dailyChallenge,
-        s.dailyChallengeSub,
-        AppColors.sun,
-        () => openChallenges(context),
+    final theme = Theme.of(context);
+    return TintCard(
+      tint: AppColors.sky,
+      onTap: () => showMoodPicker(context),
+      padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: AppColors.sky.withValues(alpha: context.isDark ? 0.25 : 0.6),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.mood_rounded),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(s.moodBreathing, style: theme.textTheme.titleMedium),
+                Text(s.moodBreathingSub, style: theme.textTheme.bodySmall?.copyWith(color: context.softText)),
+              ],
+            ),
+          ),
+          const _ArrowBubble(),
+        ],
       ),
-      (Icons.favorite_border_rounded, s.favorites, s.favoritesSub, AppColors.blush, () => openFavorites(context)),
-    ];
-    return LayoutBuilder(
-      builder: (context, c) {
-        final w = (c.maxWidth - 12) / 2;
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            for (final (icon, title, sub, color, onTap) in items)
-              SizedBox(
-                width: w,
-                child: SoftCard(
-                  onTap: onTap,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      IconBadge(icon, color: color, size: 42),
-                      const SizedBox(height: 12),
-                      Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 2),
-                      Text(
-                        sub,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.softText),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
     );
   }
 }
@@ -287,7 +460,8 @@ class _ChallengePreview extends StatelessWidget {
     final p = ChallengeService.todayProgress(store.sessions);
     final streak = ChallengeService.streak(store.sessions);
     final theme = Theme.of(context);
-    return SoftCard(
+    return TintCard(
+      tint: AppColors.sun,
       onTap: () => openChallenges(context),
       child: Row(
         children: [
@@ -365,7 +539,8 @@ class _RecentList extends StatelessWidget {
           final t = techniqueById(ids[i])!;
           return SizedBox(
             width: 150,
-            child: SoftCard(
+            child: TintCard(
+              tint: t.color,
               padding: const EdgeInsets.all(14),
               onTap: () => openTechnique(context, t),
               child: Column(

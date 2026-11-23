@@ -7,6 +7,7 @@ import '../models/breath_pattern.dart';
 import '../models/technique.dart';
 import '../services/progress_store.dart';
 import '../theme/app_colors.dart';
+import 'glow.dart';
 
 class SectionHeader extends StatelessWidget {
   const SectionHeader(this.title, {super.key, this.action, this.onAction});
@@ -177,7 +178,9 @@ class TechniqueCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = technique;
     final theme = Theme.of(context);
-    return SoftCard(
+    return TintCard(
+      tint: t.color,
+      strength: 0.55,
       onTap: onTap,
       padding: const EdgeInsets.fromLTRB(16, 14, 6, 14),
       child: Row(

@@ -5,13 +5,13 @@ Free, ad-supported (Google AdMob), English + Hindi, light & dark themes, and ful
 
 > BreatheCare is a relaxation / wellness app. It is **not** a medical device and makes no medical claims.
 
-| Home | Guided session | Technique | Mood |
+| Home (dark) | Home (light) | Box breathing | 4-7-8 (triangle) |
 | --- | --- | --- | --- |
-| ![](docs/screenshots/home.png) | ![](docs/screenshots/session.png) | ![](docs/screenshots/technique.png) | ![](docs/screenshots/mood.png) |
-| **Emergency Calm** | **Progress** | **Dark theme** | **हिन्दी** |
-| ![](docs/screenshots/emergency-calm.png) | ![](docs/screenshots/progress.png) | ![](docs/screenshots/home-dark.png) | ![](docs/screenshots/home-hindi.png) |
+| ![](docs/screenshots/home-dark.png) | ![](docs/screenshots/home.png) | ![](docs/screenshots/session-box.png) | ![](docs/screenshots/session-triangle.png) |
+| **In/out rhythm (circle)** | **Emergency Calm** | **Technique** | **About / logo** |
+| ![](docs/screenshots/session-circle.png) | ![](docs/screenshots/emergency-calm.png) | ![](docs/screenshots/technique.png) | ![](docs/screenshots/about.png) |
 
-<sub>Screenshots are rendered from widget tests (emoji glyphs aren't available in the test renderer, so the mood picker isn't shown).</sub>
+<sub>Screenshots are rendered from widget tests (emoji glyphs aren't available in the test renderer).</sub>
 
 ## Features
 

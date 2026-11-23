@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -11,6 +12,7 @@ import '../l10n/strings.dart';
 import '../models/breath_pattern.dart';
 import '../models/technique.dart';
 import '../services/ads_service.dart';
+import '../services/audio_download_service.dart';
 import '../services/breathing_clock.dart';
 import '../services/challenge_service.dart';
 import '../services/date_utils.dart';
@@ -18,8 +20,9 @@ import '../services/progress_store.dart';
 import '../services/settings_controller.dart';
 import '../services/voice_guide.dart';
 import '../theme/app_colors.dart';
-import '../widgets/breathing_visual.dart';
+import '../widgets/breath_path_visual.dart';
 import '../widgets/common.dart';
+import '../widgets/glow.dart';
 import '../widgets/nature_background.dart';
 
 enum _Stage { preparing, running, paused, finished }
@@ -46,7 +49,10 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
   late final Ticker _ticker;
   final _voice = VoiceGuide();
   late bool _voiceOn;
+  late bool _hapticsOn;
   late final bool _gentle;
+  bool _audioOn = false;
+  AudioPlayer? _player;
 
   _Stage _stage = _Stage.preparing;
   double _prepElapsed = 0;
@@ -56,11 +62,14 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
   bool _recorded = false;
   int _recordedSeconds = 0;
 
+  BreathPattern get _pattern => _clock.pattern;
+
   @override
   void initState() {
     super.initState();
     final settings = context.read<SettingsController>();
     _voiceOn = settings.voiceGuidance;
+    _hapticsOn = settings.haptics;
     _gentle = widget.gentle ?? settings.gentleModeDefault;
     final pattern = _gentle ? widget.technique.pattern.withoutHolds() : widget.technique.pattern;
     _clock = BreathingClock(pattern, targetSeconds: widget.minutes * 60);
@@ -75,6 +84,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
     WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
     _voice.stop();
+    _player?.dispose();
     AdsService.instance.release();
     _keepAwake(false);
     super.dispose();
@@ -119,9 +129,9 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
   }
 
   void _onPhaseChange(PhaseType type) {
-    final settings = context.read<SettingsController>();
-    if (settings.haptics) HapticFeedback.selectionClick();
+    if (_hapticsOn) HapticFeedback.selectionClick();
     if (_voiceOn) {
+      final settings = context.read<SettingsController>();
       _voice.say(context.s.phaseCue(type), lang: context.lang, volume: settings.voiceVolume);
     }
   }
@@ -129,6 +139,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
   void _pause() {
     setState(() => _stage = _Stage.paused);
     _voice.stop();
+    _player?.pause();
   }
 
   void _resume() {
@@ -141,12 +152,38 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
         _lastSerial = -1;
       }
     });
+    if (_audioOn) _player?.play();
+  }
+
+  Future<void> _toggleAudio() async {
+    final s = context.s;
+    if (_audioOn) {
+      setState(() => _audioOn = false);
+      await _player?.pause();
+      return;
+    }
+    final path = context.read<AudioDownloadService>().localPath(widget.technique.id);
+    if (path == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(s.audioGuideNotDownloaded)));
+      return;
+    }
+    setState(() => _audioOn = true);
+    try {
+      final player = _player ??= AudioPlayer();
+      if (player.audioSource == null) await player.setFilePath(path);
+      if (_stage != _Stage.paused && _stage != _Stage.finished) unawaited(player.play());
+    } catch (_) {
+      if (mounted) setState(() => _audioOn = false);
+    }
   }
 
   Future<void> _finish({required bool completed}) async {
     if (_stage == _Stage.finished) return;
     setState(() => _stage = _Stage.finished);
     _voice.stop();
+    unawaited(_player?.stop());
     _keepAwake(false);
     final seconds = _clock.elapsed.round();
     if (!_recorded) {
@@ -161,9 +198,14 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
       if (mounted) setState(() {});
     }
     if (completed && mounted) {
-      final settings = context.read<SettingsController>();
-      if (settings.haptics) HapticFeedback.mediumImpact();
-      if (_voiceOn) _voice.say(context.s.sessionCompleteCue, lang: context.lang, volume: settings.voiceVolume);
+      if (_hapticsOn) HapticFeedback.mediumImpact();
+      if (_voiceOn) {
+        _voice.say(
+          context.s.sessionCompleteCue,
+          lang: context.lang,
+          volume: context.read<SettingsController>().voiceVolume,
+        );
+      }
     }
   }
 
@@ -186,7 +228,8 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
       },
       child: Scaffold(
         body: NatureBackground(
-          tint: Color.lerp(t.color, dark ? AppColors.night : AppColors.cream, dark ? 0.82 : 0.5),
+          tint: Color.lerp(t.color, dark ? AppColors.night : AppColors.cream, dark ? 0.86 : 0.55),
+          fireflies: true,
           child: SafeArea(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 500),
@@ -202,147 +245,197 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
     final s = context.s;
     final t = widget.technique;
     final theme = Theme.of(context);
+    final dark = context.isDark;
+    final accent = accentOf(context);
     final preparing = _stage == _Stage.preparing;
     final paused = _stage == _Stage.paused;
     final prepCount = (_prepSeconds - _prepElapsed.floor()).clamp(1, _prepSeconds);
+    final totalRounds = _clock.totalRounds ?? 1;
+    final round = _clock.round.clamp(1, totalRounds);
+    final visualColor = dark ? AppColors.mintDeep : AppColors.sageDark;
 
     final String label;
     final String counter;
     if (preparing) {
-      label = s.getComfortable;
+      label = s.getReady;
       counter = '$prepCount';
     } else {
       label = paused ? s.paused : s.phaseCue(_clock.phase.type);
       counter = '${_clock.phaseSecondsLeft}';
     }
+    final patternText = _pattern.phases
+        .map((p) => '${s.phaseName(p.type)} ${p.seconds}${s.secondsShort}')
+        .join('  ·  ');
 
     return Column(
       key: const ValueKey('session'),
       children: [
+        // Top bar: back + toggles
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+          padding: const EdgeInsets.fromLTRB(8, 6, 16, 0),
           child: Row(
             children: [
-              IconButton(tooltip: s.endSession, onPressed: _endPressed, icon: const Icon(Icons.close_rounded)),
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(context.l(t.name), style: theme.textTheme.titleMedium, textAlign: TextAlign.center),
-                    if (_gentle && t.pattern.hasHolds)
-                      Text(s.gentleModeOn, style: theme.textTheme.labelSmall?.copyWith(color: context.softText)),
-                  ],
-                ),
+              IconButton(tooltip: s.endSession, onPressed: _endPressed, icon: const Icon(Icons.arrow_back_rounded)),
+              const Spacer(),
+              ToggleTile(
+                icon: Icons.music_note_rounded,
+                active: _audioOn,
+                tooltip: _audioOn ? s.audioGuideOff : s.audioGuideOn,
+                onTap: _toggleAudio,
               ),
-              IconButton(
+              const SizedBox(width: 8),
+              ToggleTile(
+                icon: Icons.vibration_rounded,
+                active: _hapticsOn,
+                tooltip: _hapticsOn ? s.hapticsOff : s.hapticsOn,
+                onTap: () => setState(() => _hapticsOn = !_hapticsOn),
+              ),
+              const SizedBox(width: 8),
+              ToggleTile(
+                icon: Icons.record_voice_over_rounded,
+                active: _voiceOn,
                 tooltip: _voiceOn ? s.voiceOff : s.voiceOn,
-                onPressed: () {
+                onTap: () {
                   setState(() => _voiceOn = !_voiceOn);
                   if (!_voiceOn) _voice.stop();
                 },
-                icon: Icon(_voiceOn ? Icons.record_voice_over_rounded : Icons.voice_over_off_rounded),
               ),
             ],
           ),
         ),
+        const SizedBox(height: 10),
+        Text(context.l(t.name), style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
+        const SizedBox(height: 6),
+        Overline(preparing ? s.getReady : s.roundOf(round, totalRounds)),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: 150,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: _clock.sessionProgress,
+              minHeight: 4,
+              color: accent,
+              backgroundColor: accent.withValues(alpha: 0.18),
+            ),
+          ),
+        ),
+        if (_gentle && t.pattern.hasHolds) ...[
+          const SizedBox(height: 6),
+          Text(s.gentleModeOn, style: theme.textTheme.labelSmall?.copyWith(color: context.softText)),
+        ],
+        // Shape tracer
         Expanded(
           child: LayoutBuilder(
             builder: (context, box) {
-              final visualSize = (box.maxWidth * 0.86 < box.maxHeight - 150 ? box.maxWidth * 0.86 : box.maxHeight - 150)
-                  .clamp(120.0, 380.0);
+              final size = (box.maxWidth * 0.86 < box.maxHeight ? box.maxWidth * 0.86 : box.maxHeight).clamp(
+                120.0,
+                380.0,
+              );
               return Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: SizedBox(
-                    width: box.maxWidth,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Semantics(
-                          liveRegion: true,
-                          label: label,
-                          child: BreathingVisual(
-                            size: visualSize,
-                            expansion: preparing ? 0.15 + 0.1 * (_prepElapsed % 1) : _clock.expansion,
-                            rotation: _clock.elapsed * 0.05,
-                            color: t.color,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  counter,
-                                  style: theme.textTheme.displaySmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.forest,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 350),
-                          child: Text(label, key: ValueKey(label), style: theme.textTheme.headlineMedium),
-                        ),
-                        const SizedBox(height: 8),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32),
-                          child: Text(
-                            preparing ? s.prepHint : s.followAtYourPace,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(color: context.softText),
-                          ),
-                        ),
-                      ],
-                    ),
+                child: Semantics(
+                  liveRegion: true,
+                  label: label,
+                  child: BreathPathVisual(
+                    size: size,
+                    pattern: _pattern,
+                    phaseIndex: preparing ? 0 : _clock.phaseIndex,
+                    phaseProgress: preparing ? 0 : _clock.phaseProgress,
+                    expansion: preparing ? 0.1 + 0.1 * (_prepElapsed % 1) : _clock.expansion,
+                    color: visualColor,
                   ),
                 ),
               );
             },
           ),
         ),
+        // Bottom panel
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(value: _clock.sessionProgress, minHeight: 6),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(formatClock(_clock.elapsed.floor()), style: theme.textTheme.labelLarge),
-                  const Spacer(),
-                  Text(s.timeLeft(formatClock(_clock.remainingSeconds)), style: theme.textTheme.labelLarge),
-                ],
-              ),
-            ],
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: TintCard(
+            tint: dark ? AppColors.forestSoft : AppColors.mint,
+            strength: dark ? 1.4 : 1,
+            radius: 28,
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+            child: Column(
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (c, a) => FadeTransition(
+                    opacity: a,
+                    child: SlideTransition(
+                      position: Tween(begin: const Offset(0, 0.4), end: Offset.zero).animate(a),
+                      child: c,
+                    ),
+                  ),
+                  child: Overline(label, key: ValueKey(label), color: dark ? AppColors.cream : AppColors.forest),
+                ),
+                const SizedBox(height: 4),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  transitionBuilder: (c, a) => ScaleTransition(scale: Tween(begin: 0.8, end: 1.0).animate(a), child: c),
+                  child: Text(
+                    counter,
+                    key: ValueKey(counter + label),
+                    style: theme.textTheme.displayMedium?.copyWith(
+                      fontSize: 56,
+                      fontWeight: FontWeight.w800,
+                      color: accent,
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  patternText,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(color: context.softText),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Tooltip(
+                          message: s.endSession,
+                          child: TextButton.icon(
+                            onPressed: _endPressed,
+                            icon: const Icon(Icons.stop_rounded, size: 20),
+                            label: Text(s.end),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 64,
+                      height: 64,
+                      child: IconButton.filled(
+                        tooltip: paused ? s.resume : s.pause,
+                        iconSize: 32,
+                        style: IconButton.styleFrom(
+                          backgroundColor: accent,
+                          foregroundColor: dark ? AppColors.forest : Colors.white,
+                        ),
+                        onPressed: paused ? _resume : _pause,
+                        icon: Icon(paused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+                      ),
+                    ),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          s.timeLeft(formatClock(_clock.remainingSeconds)),
+                          style: theme.textTheme.labelLarge?.copyWith(color: context.softText),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 76,
-              height: 76,
-              child: IconButton.filled(
-                tooltip: paused ? s.resume : s.pause,
-                iconSize: 38,
-                onPressed: paused ? _resume : _pause,
-                icon: Icon(paused ? Icons.play_arrow_rounded : Icons.pause_rounded),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        TextButton.icon(
-          onPressed: _endPressed,
-          icon: const Icon(Icons.stop_circle_outlined),
-          label: Text(s.endSession),
-        ),
-        const SizedBox(height: 12),
       ],
     );
   }
@@ -359,10 +452,9 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
       padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
       children: [
         Center(
-          child: BreathingVisual(
-            size: 180,
-            expansion: 0.65,
-            color: t.color,
+          child: GlowOrb(
+            size: 190,
+            color: context.isDark ? AppColors.mintDeep : AppColors.sage,
             child: const Icon(Icons.check_rounded, size: 46, color: AppColors.forest),
           ),
         ),
@@ -375,35 +467,28 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
           style: theme.textTheme.bodyLarge?.copyWith(color: context.softText),
         ),
         const SizedBox(height: 24),
-        Row(
+        StatGrid(
           children: [
-            Expanded(
-              child: StatTile(
-                icon: Icons.local_fire_department_outlined,
-                value: '${store.currentStreak}',
-                label: s.dayStreak,
-                color: AppColors.sun,
-              ),
+            StatTile(
+              icon: Icons.local_fire_department_outlined,
+              value: '${store.currentStreak}',
+              label: s.dayStreak,
+              color: AppColors.sun,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: StatTile(
-                icon: Icons.today_rounded,
-                value: s.durationText(store.secondsOn(today())),
-                label: s.today,
-                color: AppColors.mint,
-              ),
+            StatTile(
+              icon: Icons.today_rounded,
+              value: s.durationText(store.secondsOn(today())),
+              label: s.today,
+              color: AppColors.mint,
             ),
           ],
         ),
         const SizedBox(height: 12),
-        SoftCard(
+        TintCard(
+          tint: challenge.done ? AppColors.mintDeep : AppColors.sun,
           child: Row(
             children: [
-              Icon(
-                challenge.done ? Icons.emoji_events_rounded : challenge.def.icon,
-                color: challenge.done ? const Color(0xFFE0A84F) : null,
-              ),
+              Icon(challenge.done ? Icons.emoji_events_rounded : challenge.def.icon),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
