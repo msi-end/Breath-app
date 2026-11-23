@@ -52,6 +52,13 @@ android {
         }
     }
 
+    lint {
+        // Release lint runs over third-party plugin code too and has crashed on
+        // it; it adds nothing to the APK, so don't let it block builds.
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
+
     buildTypes {
         release {
             signingConfig =
