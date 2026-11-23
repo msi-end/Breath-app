@@ -26,6 +26,9 @@ Technique todaysTechnique() {
 
 const dailyGoalSeconds = 5 * 60;
 
+/// Techniques featured on Home.
+const featuredTechniqueIds = ['box', '478', 'belly', 'focus'];
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.onOpenProgress});
 
@@ -38,85 +41,53 @@ class HomeScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final hour = DateTime.now().hour;
     final greeting = hour < 12 ? s.goodMorning : (hour < 17 ? s.goodAfternoon : s.goodEvening);
-    final challenge = ChallengeService.todayProgress(store.sessions);
-    final favCount = store.favorites.length;
+    final recent = store.recentTechniqueIds();
 
     return NatureBackground(
-      showHills: true,
       child: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
           children: [
-            // Greeting
+            // Header
             Row(
               children: [
-                const BreatheCareLogo(size: 30),
-                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(greeting, style: theme.textTheme.headlineSmall),
-                      Text(s.welcomeSubtitle, style: theme.textTheme.bodyMedium?.copyWith(color: context.softText)),
+                      Text(greeting, style: theme.textTheme.titleSmall?.copyWith(color: context.softText)),
+                      const SizedBox(height: 2),
+                      Text(s.readyToBreathe, style: theme.textTheme.headlineMedium),
                     ],
                   ),
                 ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: context.cardColor, shape: BoxShape.circle),
+                  child: const BreatheCareLogo(size: 32),
+                ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
             FadeSlideIn(child: _TodayCard(store: store)),
             const SizedBox(height: 12),
-            const FadeSlideIn(delay: Duration(milliseconds: 80), child: _EmergencyButton()),
-            const SizedBox(height: 28),
-            RowGroup(
-              children: [
-                NavRow(
-                  icon: Icons.mood_rounded,
-                  iconColor: AppColors.sky,
-                  title: s.moodBreathing,
-                  subtitle: s.moodBreathingSub,
-                  onTap: () => showMoodPicker(context),
-                ),
-                NavRow(
-                  icon: Icons.spa_outlined,
-                  title: s.exploreTechniques,
-                  subtitle: s.exploreTechniquesSub,
-                  onTap: () => openTechniques(context),
-                ),
-                NavRow(
-                  icon: challenge.done ? Icons.check_rounded : challenge.def.icon,
-                  iconColor: AppColors.sun,
-                  title: s.dailyChallenge,
-                  subtitle: context.l(challenge.def.title),
-                  trailing: SizedBox.square(
-                    dimension: 26,
-                    child: CircularProgressIndicator(
-                      value: challenge.fraction,
-                      strokeWidth: 3,
-                      strokeCap: StrokeCap.round,
-                      backgroundColor: theme.colorScheme.outlineVariant,
-                      color: accentOf(context),
-                    ),
-                  ),
-                  onTap: () => openChallenges(context),
-                ),
-                NavRow(
-                  icon: Icons.favorite_border_rounded,
-                  iconColor: AppColors.blush,
-                  title: s.favorites,
-                  subtitle: favCount == 0 ? s.favoritesSub : s.savedCount(favCount),
-                  onTap: () => openFavorites(context),
-                ),
-              ],
+            const FadeSlideIn(delay: Duration(milliseconds: 60), child: _EmergencyButton()),
+            const SizedBox(height: 30),
+            _Header(s.breathingTechniques, action: s.seeAll, onAction: () => openTechniques(context)),
+            const FadeSlideIn(delay: Duration(milliseconds: 120), child: _TechniqueCarousel()),
+            const SizedBox(height: 26),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 180),
+              child: _QuickGrid(store: store),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 30),
             _Header(s.thisWeek, action: s.viewProgress, onAction: onOpenProgress),
             _WeekCard(store: store, onTap: onOpenProgress),
-            if (store.recentTechniqueIds().isNotEmpty) ...[
-              const SizedBox(height: 28),
+            if (recent.isNotEmpty) ...[
+              const SizedBox(height: 30),
               _Header(s.recentlyPracticed),
-              _RecentChips(ids: store.recentTechniqueIds()),
+              _RecentChips(ids: recent),
             ],
             const BannerAdSlot(padding: EdgeInsets.only(top: 24)),
           ],
@@ -136,11 +107,11 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10, left: 4),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Expanded(
-            child: Semantics(header: true, child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
+            child: Semantics(header: true, child: Text(title, style: Theme.of(context).textTheme.titleLarge)),
           ),
           if (action != null)
             TextButton(
@@ -154,7 +125,7 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// Today's suggested practice — the one primary action on Home.
+/// Today's suggested practice — the primary action on Home.
 class _TodayCard extends StatelessWidget {
   const _TodayCard({required this.store});
 
@@ -168,74 +139,105 @@ class _TodayCard extends StatelessWidget {
     final todaySeconds = store.secondsOn(today());
     final fraction = (todaySeconds / dailyGoalSeconds).clamp(0.0, 1.0);
     const onCard = AppColors.cream;
-    final rhythm = t.pattern.phases.map((p) => '${s.phaseShort(p.type)} ${p.seconds}').join(' · ');
     return SoftCard(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-      radius: 26,
+      padding: EdgeInsets.zero,
+      radius: 30,
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF2E5A3F), AppColors.forest],
+        colors: [Color(0xFF3A6B4B), AppColors.forest, Color(0xFF1B3324)],
       ),
       onTap: () => openTechnique(context, t),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      s.todaysBreathing,
-                      style: theme.textTheme.labelLarge?.copyWith(color: onCard.withValues(alpha: 0.7)),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(context.l(t.name), style: theme.textTheme.headlineSmall?.copyWith(color: onCard)),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${s.minutesCount(t.recommendedMinutes)} · $rhythm',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: onCard.withValues(alpha: 0.8)),
-                    ),
-                  ],
+          // Decorative breathing orb, partly off the card edge.
+          const Positioned(right: -36, top: -36, child: GlowOrb(size: 170, color: AppColors.mintDeep, rings: true)),
+          Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Pill(text: s.todaysBreathing, dark: true),
+                const SizedBox(height: 14),
+                Padding(
+                  padding: const EdgeInsets.only(right: 90),
+                  child: Text(
+                    context.l(t.name),
+                    style: theme.textTheme.headlineSmall?.copyWith(color: onCard, height: 1.15),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Semantics(
-                label: s.practicedToday(s.durationText(todaySeconds)),
-                child: SizedBox.square(
-                  dimension: 64,
-                  child: Stack(
-                    alignment: Alignment.center,
+                const SizedBox(height: 6),
+                Text(
+                  context.l(t.tagline),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(color: onCard.withValues(alpha: 0.78)),
+                ),
+                const SizedBox(height: 14),
+                Semantics(
+                  label: s.practicedToday(s.durationText(todaySeconds)),
+                  excludeSemantics: true,
+                  child: Row(
                     children: [
-                      const GlowOrb(size: 64, color: AppColors.mintDeep, rings: false),
-                      SizedBox.expand(
-                        child: CircularProgressIndicator(
-                          value: fraction,
-                          strokeWidth: 3,
-                          strokeCap: StrokeCap.round,
-                          backgroundColor: onCard.withValues(alpha: 0.15),
-                          color: AppColors.mint,
+                      SizedBox(
+                        width: 72,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: fraction,
+                            minHeight: 5,
+                            color: AppColors.mint,
+                            backgroundColor: onCard.withValues(alpha: 0.18),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          s.goalToday((todaySeconds / 60).floor(), dailyGoalSeconds ~/ 60),
+                          style: theme.textTheme.labelMedium?.copyWith(color: onCard.withValues(alpha: 0.8)),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.mint, foregroundColor: AppColors.forest),
-              onPressed: () => startSession(context, t),
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: Text(s.startBreathing),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(backgroundColor: AppColors.mint, foregroundColor: AppColors.forest),
+                    onPressed: () => startSession(context, t),
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: Text(s.startBreathing),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill({required this.text, this.dark = false});
+
+  final String text;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: dark ? Colors.white.withValues(alpha: 0.12) : AppColors.forest.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.labelMedium
+            ?.copyWith(color: dark ? AppColors.mint : AppColors.forest, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -267,6 +269,232 @@ class _EmergencyButton extends StatelessWidget {
   }
 }
 
+/// Swipeable row of featured techniques.
+class _TechniqueCarousel extends StatelessWidget {
+  const _TechniqueCarousel();
+
+  @override
+  Widget build(BuildContext context) {
+    final techniques = featuredTechniqueIds.map((id) => techniqueById(id)!).toList();
+    return SizedBox(
+      height: 206,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        itemCount: techniques.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        itemBuilder: (context, i) => _TechniqueTile(technique: techniques[i]),
+      ),
+    );
+  }
+}
+
+class _TechniqueTile extends StatelessWidget {
+  const _TechniqueTile({required this.technique});
+
+  final Technique technique;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = technique;
+    final s = context.s;
+    final theme = Theme.of(context);
+    final dark = context.isDark;
+    final top = dark ? Color.lerp(t.color, AppColors.night, 0.55)! : Color.lerp(t.color, Colors.white, 0.45)!;
+    final bottom = dark ? Color.lerp(t.color, AppColors.night, 0.75)! : t.color;
+    final fg = dark ? AppColors.cream : AppColors.forest;
+    return SizedBox(
+      width: 160,
+      child: SoftCard(
+        padding: EdgeInsets.zero,
+        radius: 26,
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [top, bottom]),
+        onTap: () => openTechnique(context, t),
+        child: Stack(
+          children: [
+            Positioned(right: -18, top: -14, child: Icon(t.icon, size: 110, color: fg.withValues(alpha: 0.07))),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: dark ? 0.1 : 0.6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(t.icon, size: 22, color: fg),
+                  ),
+                  const Spacer(),
+                  Text(
+                    context.l(t.name),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(color: fg, height: 1.2),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          s.minutesCount(t.recommendedMinutes),
+                          style: theme.textTheme.labelMedium?.copyWith(color: fg.withValues(alpha: 0.7)),
+                        ),
+                      ),
+                      Material(
+                        color: dark ? AppColors.mintDeep : AppColors.forest,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () => startSession(context, t),
+                          child: Tooltip(
+                            message: s.startBreathing,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.play_arrow_rounded,
+                                size: 20,
+                                color: dark ? AppColors.forest : AppColors.cream,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 2 × 2 grid: Mood, Explore, Daily Challenge, Favorites.
+class _QuickGrid extends StatelessWidget {
+  const _QuickGrid({required this.store});
+
+  final ProgressStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final challenge = ChallengeService.todayProgress(store.sessions);
+    final favCount = store.favorites.length;
+    return StatGrid(
+      children: [
+        _QuickCard(
+          icon: Icons.mood_rounded,
+          pastel: AppColors.sky,
+          title: s.moodBreathing,
+          subtitle: s.moodBreathingSub,
+          onTap: () => showMoodPicker(context),
+        ),
+        _QuickCard(
+          icon: Icons.spa_outlined,
+          pastel: AppColors.mintDeep,
+          title: s.exploreTechniques,
+          subtitle: s.exploreTechniquesSub,
+          onTap: () => openTechniques(context),
+        ),
+        _QuickCard(
+          icon: challenge.done ? Icons.emoji_events_rounded : challenge.def.icon,
+          pastel: AppColors.sun,
+          title: s.dailyChallenge,
+          subtitle: context.l(challenge.def.title),
+          progress: challenge.fraction,
+          onTap: () => openChallenges(context),
+        ),
+        _QuickCard(
+          icon: Icons.favorite_border_rounded,
+          pastel: AppColors.blush,
+          title: s.favorites,
+          subtitle: favCount == 0 ? s.favoritesSub : s.savedCount(favCount),
+          onTap: () => openFavorites(context),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickCard extends StatelessWidget {
+  const _QuickCard({
+    required this.icon,
+    required this.pastel,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.progress,
+  });
+
+  final IconData icon;
+  final Color pastel;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final double? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = context.isDark;
+    final bg = dark
+        ? Color.alphaBlend(pastel.withValues(alpha: 0.14), AppColors.nightCard)
+        : Color.alphaBlend(pastel.withValues(alpha: 0.38), Colors.white);
+    return SoftCard(
+      color: bg,
+      radius: 26,
+      padding: const EdgeInsets.all(16),
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: dark ? pastel.withValues(alpha: 0.22) : Colors.white.withValues(alpha: 0.75),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 22),
+              ),
+              const Spacer(),
+              if (progress != null)
+                SizedBox.square(
+                  dimension: 30,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 3.5,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor: (dark ? Colors.white : AppColors.forest).withValues(alpha: 0.12),
+                    color: accentOf(context),
+                  ),
+                )
+              else
+                Icon(Icons.arrow_outward_rounded, size: 20, color: context.softText),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(color: context.softText, height: 1.3),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _WeekCard extends StatelessWidget {
   const _WeekCard({required this.store, required this.onTap});
 
@@ -293,29 +521,28 @@ class _WeekCard extends StatelessWidget {
               for (var i = 0; i < 7; i++)
                 Column(
                   children: [
+                    Text(labels[i], style: theme.textTheme.labelSmall?.copyWith(color: context.softText)),
+                    const SizedBox(height: 8),
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
-                      width: 30,
-                      height: 30,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: week[i] > 0 ? accent : Colors.transparent,
-                        border: Border.all(
-                          color: week[i] > 0 ? accent : theme.colorScheme.outlineVariant,
-                          width: i == 6 ? 2 : 1.2,
-                        ),
+                        color: week[i] > 0
+                            ? accent
+                            : (context.isDark ? Colors.white : AppColors.forest).withValues(alpha: 0.05),
+                        border: i == 6 ? Border.all(color: accent, width: 2) : null,
                       ),
                       child: week[i] > 0
-                          ? Icon(Icons.check_rounded, size: 16, color: context.isDark ? AppColors.forest : Colors.white)
+                          ? Icon(Icons.check_rounded, size: 17, color: context.isDark ? AppColors.forest : Colors.white)
                           : null,
                     ),
-                    const SizedBox(height: 6),
-                    Text(labels[i], style: theme.textTheme.labelSmall?.copyWith(color: context.softText)),
                   ],
                 ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Text(
             total == 0 ? s.weekEmpty : s.weekSummary(s.durationText(total), active, store.currentStreak),
             style: theme.textTheme.bodyMedium?.copyWith(color: context.softText),
@@ -333,22 +560,27 @@ class _RecentChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final id in ids.take(4))
-          Builder(
-            builder: (context) {
-              final t = techniqueById(id)!;
-              return ActionChip(
-                avatar: Icon(t.icon, size: 18),
-                label: Text(context.l(t.name)),
-                onPressed: () => openTechnique(context, t),
-              );
-            },
-          ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: Row(
+        children: [
+          for (final id in ids.take(6))
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Builder(
+                builder: (context) {
+                  final t = techniqueById(id)!;
+                  return ActionChip(
+                    avatar: Icon(t.icon, size: 18),
+                    label: Text(context.l(t.name)),
+                    onPressed: () => openTechnique(context, t),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

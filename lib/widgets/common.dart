@@ -40,7 +40,7 @@ class SoftCard extends StatefulWidget {
     this.padding = const EdgeInsets.all(18),
     this.color,
     this.gradient,
-    this.radius = 20,
+    this.radius = 24,
   });
 
   final Widget child;
@@ -68,7 +68,19 @@ class _SoftCardState extends State<SoftCard> {
           color: widget.gradient == null ? (widget.color ?? context.cardColor) : null,
           gradient: widget.gradient,
           borderRadius: radius,
-          border: widget.gradient == null ? Border.all(color: Theme.of(context).colorScheme.outlineVariant) : null,
+          border: context.isDark && widget.gradient == null && widget.color == null
+              ? Border.all(color: AppColors.nightLine)
+              : null,
+          boxShadow: context.isDark || widget.color != null
+              ? null
+              : [
+                  BoxShadow(
+                    color: AppColors.forest.withValues(alpha: 0.05),
+                    blurRadius: 24,
+                    spreadRadius: -10,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
         ),
         child: Material(
           type: MaterialType.transparency,

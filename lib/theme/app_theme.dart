@@ -7,6 +7,9 @@ import 'app_colors.dart';
 class AppTheme {
   AppTheme._();
 
+  /// Bundled so it works offline; Devanagari falls back to the system font.
+  static const fontFamily = 'PlusJakartaSans';
+
   static ThemeData light() {
     const scheme = ColorScheme(
       brightness: Brightness.light,
@@ -61,16 +64,19 @@ class AppTheme {
 
   static ThemeData _base(ColorScheme scheme, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final base = ThemeData(useMaterial3: true, colorScheme: scheme, brightness: brightness);
+    final base = ThemeData(useMaterial3: true, colorScheme: scheme, brightness: brightness, fontFamily: fontFamily);
     final text = base.textTheme.apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface);
     return base.copyWith(
       scaffoldBackgroundColor: scheme.surface,
       textTheme: text.copyWith(
-        headlineLarge: text.headlineLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.5),
-        headlineMedium: text.headlineMedium?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.4),
-        headlineSmall: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-        titleLarge: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-        titleMedium: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        displaySmall: text.displaySmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1),
+        headlineLarge: text.headlineLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1),
+        headlineMedium: text.headlineMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.8),
+        headlineSmall: text.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+        titleLarge: text.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+        titleMedium: text.titleMedium?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.1),
+        titleSmall: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+        labelLarge: text.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         bodyLarge: text.bodyLarge?.copyWith(height: 1.55),
         bodyMedium: text.bodyMedium?.copyWith(height: 1.5),
       ),
@@ -80,27 +86,32 @@ class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         foregroundColor: scheme.onSurface,
-        titleTextStyle: text.titleLarge?.copyWith(fontSize: 20, fontWeight: FontWeight.w700, color: scheme.onSurface),
+        titleTextStyle: text.titleLarge?.copyWith(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.3,
+          color: scheme.onSurface,
+        ),
         systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       ),
       cardTheme: CardThemeData(
         color: isDark ? AppColors.nightCard : Colors.white,
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(64, 52),
+          minimumSize: const Size(64, 54),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape: const StadiumBorder(),
           textStyle: text.labelLarge?.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(64, 48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          minimumSize: const Size(64, 50),
+          shape: const StadiumBorder(),
           side: BorderSide(color: scheme.outline),
           textStyle: text.labelLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
         ),
@@ -109,8 +120,9 @@ class AppTheme {
         style: TextButton.styleFrom(textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
       ),
       chipTheme: base.chipTheme.copyWith(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: const StadiumBorder(),
         side: BorderSide(color: scheme.outlineVariant),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         backgroundColor: isDark ? AppColors.nightCard : Colors.white,
         selectedColor: isDark ? AppColors.forestSoft : AppColors.mint,
         labelStyle: text.labelLarge?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w600),

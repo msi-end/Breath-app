@@ -5,6 +5,7 @@ import '../l10n/strings.dart';
 import '../services/account_service.dart';
 import '../services/ads_service.dart';
 import '../services/usage_tracker.dart';
+import '../theme/app_colors.dart';
 import '../widgets/account_invite_dialog.dart';
 import 'home_screen.dart';
 import 'learn_screen.dart';
@@ -61,31 +62,57 @@ class _RootShellState extends State<RootShell> {
             TickerMode(enabled: i == _index, child: page),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _select,
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: s.tabHome,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            border: context.isDark ? Border.all(color: AppColors.nightLine) : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: context.isDark ? 0.35 : 0.07),
+                blurRadius: 24,
+                spreadRadius: -6,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.menu_book_outlined),
-            selectedIcon: const Icon(Icons.menu_book_rounded),
-            label: s.tabLearn,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: MediaQuery.removePadding(
+              context: context,
+              removeBottom: true,
+              child: NavigationBar(
+                height: 66,
+                selectedIndex: _index,
+                onDestinationSelected: _select,
+                destinations: [
+                  NavigationDestination(
+                    icon: const Icon(Icons.home_outlined),
+                    selectedIcon: const Icon(Icons.home_rounded),
+                    label: s.tabHome,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.menu_book_outlined),
+                    selectedIcon: const Icon(Icons.menu_book_rounded),
+                    label: s.tabLearn,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.insights_outlined),
+                    selectedIcon: const Icon(Icons.insights_rounded),
+                    label: s.tabProgress,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.settings_outlined),
+                    selectedIcon: const Icon(Icons.settings_rounded),
+                    label: s.tabSettings,
+                  ),
+                ],
+              ),
+            ),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.insights_outlined),
-            selectedIcon: const Icon(Icons.insights_rounded),
-            label: s.tabProgress,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings_rounded),
-            label: s.tabSettings,
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -5,11 +5,11 @@ Free, ad-supported (Google AdMob), English + Hindi, light & dark themes, and ful
 
 > BreatheCare is a relaxation / wellness app. It is **not** a medical device and makes no medical claims.
 
-| Home | Home (more) | Home (dark) | Technique |
-| --- | --- | --- | --- |
-| ![](docs/screenshots/home.png) | ![](docs/screenshots/home-more.png) | ![](docs/screenshots/home-dark.png) | ![](docs/screenshots/technique.png) |
-| **Guided session** | **Session (dark)** | **Emergency Calm** | |
-| ![](docs/screenshots/session.png) | ![](docs/screenshots/session-dark.png) | ![](docs/screenshots/emergency-calm.png) | |
+| Home | Home (more) | Home (dark) |
+| --- | --- | --- |
+| ![](docs/screenshots/home.png) | ![](docs/screenshots/home-more.png) | ![](docs/screenshots/home-dark.png) |
+| **Guided session** | **Session (dark)** | **Settings** |
+| ![](docs/screenshots/session.png) | ![](docs/screenshots/session-dark.png) | ![](docs/screenshots/settings.png) |
 
 <sub>Screenshots are rendered from widget tests.</sub>
 
@@ -120,6 +120,10 @@ lib/
   widgets/                     lotus breathing visual, nature background, banner slot, cards, charts
 test/                          unit + widget tests (flutter test)
 ```
+
+## Credits
+
+Typeface: [Plus Jakarta Sans](https://github.com/tokotype/PlusJakartaSans), SIL Open Font License 1.1 (`assets/fonts/OFL.txt`).
 
 ## Tests
 

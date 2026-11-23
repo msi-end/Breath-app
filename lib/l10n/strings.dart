@@ -452,6 +452,9 @@ class AppStrings {
     '$d this week · $days active ${days == 1 ? 'day' : 'days'} · $streak-day streak',
     'इस सप्ताह $d · $days सक्रिय दिन · $streak दिन की स्ट्रीक',
   );
+  String get readyToBreathe => _t('Ready to breathe?', 'साँस लेने के लिए तैयार?');
+  String get seeAll => _t('See all', 'सभी देखें');
+  String goalToday(int done, int goal) => _t('$done of $goal min today', 'आज $goal में से $done मिनट');
   String get progressTooltip => _t('Your progress', 'आपकी प्रगति');
 }
 
