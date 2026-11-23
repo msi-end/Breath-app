@@ -1,0 +1,120 @@
+name: Build APK
+
+# Manual only: runs when you click "Run workflow" in the Actions tab.
+# Pushing code never triggers a build.
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: Build type
+        type: choice
+        options: [release, debug]
+        default: release
+      split_per_abi:
+        description: Also build smaller per-CPU APKs (arm64, armeabi-v7a, x86_64)
+        type: boolean
+        default: false
+      run_tests:
+        description: Run analyzer and tests before building
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.1
+          cache: true
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Analyze and test
+        if: ${{ inputs.run_tests }}
+        run: |
+          flutter analyze
+          flutter test
+
+      # Optional: sign release builds with your own keystore.
+      # Add these repository secrets (Settings > Secrets and variables > Actions):
+      #   ANDROID_KEYSTORE_BASE64  (base64 of your .jks file)
+      #   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+      # Without them the APK is signed with a debug key (fine for installing/testing,
+      # not for publishing on Google Play).
+      - name: Configure release signing
+        if: ${{ inputs.build_type == 'release' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+            {
+              echo "storeFile=upload-keystore.jks"
+              echo "storePassword=$KEYSTORE_PASSWORD"
+              echo "keyAlias=$KEY_ALIAS"
+              echo "keyPassword=$KEY_PASSWORD"
+            } > android/key.properties
+            echo "Signing with your release keystore."
+          else
+            echo "::warning::No keystore secrets found. The APK will be signed with a debug key (OK for testing, not for Google Play)."
+          fi
+
+      - name: Build universal APK
+        run: flutter build apk --${{ inputs.build_type }} --build-number=${{ github.run_number }}
+
+      - name: Build per-ABI APKs
+        if: ${{ inputs.split_per_abi }}
+        run: flutter build apk --${{ inputs.build_type }} --split-per-abi --build-number=${{ github.run_number }}
+
+      - name: Rename APKs
+        run: |
+          cd build/app/outputs/flutter-apk
+          VERSION=$(grep '^version:' "$GITHUB_WORKSPACE/pubspec.yaml" | cut -d' ' -f2 | cut -d'+' -f1)
+          for f in app-*.apk; do
+            mv "$f" "BreatheCare-v${VERSION}-${{ github.run_number }}-${f#app-}"
+          done
+          ls -lh
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: BreatheCare-${{ inputs.build_type }}-${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/BreatheCare-*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Summary
+        run: |
+          {
+            echo "## BreatheCare APK ready"
+            echo "Download it from **Artifacts** at the bottom of this run page."
+            echo
+            echo '```'
+            ls -lh build/app/outputs/flutter-apk/BreatheCare-*.apk
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

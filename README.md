@@ -83,7 +83,24 @@ In the Firebase console:
 | Gentle Relaxation Breathing | `guidance/relax.mp3` |
 | Focus Breathing | `guidance/focus.mp3` |
 
-### 3. Release
+### 3. Download an APK from GitHub Actions
+
+The **Build APK** workflow runs **only when you start it** (pushing code never triggers a build):
+
+1. Open the repository on GitHub → **Actions** → **Build APK** → **Run workflow**.
+2. Pick the branch, `release` or `debug`, and optionally *split per ABI* for smaller APKs.
+3. When it finishes (~10 min), download the APK from **Artifacts** at the bottom of the run page (a zip containing the `.apk`).
+
+Without signing secrets the release APK is signed with a debug key — fine for installing on your phone, but not for Google Play. To sign with your own key, create one:
+
+```bash
+keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+base64 -w0 upload-keystore.jks   # copy the output
+```
+
+and add repository secrets (**Settings → Secrets and variables → Actions**): `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Keep the `.jks` file safe — you need the same key for every Play Store update.
+
+### 4. Release
 
 * Android: set your own `applicationId` in `android/app/build.gradle.kts` and a release signing config.
 * iOS: set your bundle id / team in Xcode, then `cd ios && pod install`.
