@@ -2,10 +2,12 @@ import 'package:flutter/widgets.dart';
 
 import '../data/challenges.dart';
 import '../models/breath_pattern.dart';
+import '../models/music.dart';
 import '../models/technique.dart';
 import '../services/account_service.dart';
 import '../services/audio_download_service.dart';
 import '../services/challenge_service.dart';
+import '../services/music_player.dart' show MusicRepeat;
 
 /// All UI strings in English and Hindi. Each entry carries both languages,
 /// so a translation can never be missing.
@@ -344,8 +346,8 @@ class AppStrings {
       _t('Remove progress, favorites, downloads and settings', 'प्रगति, पसंदीदा, डाउनलोड और सेटिंग्स हटाएँ');
   String get deleteMyDataTitle => _t('Delete all your data?', 'अपना सारा डेटा हटाएँ?');
   String get deleteMyDataBody => _t(
-    'This permanently removes your breathing history, favorites, challenge progress, downloaded audio and settings from this device. This cannot be undone.',
-    'यह आपके श्वास इतिहास, पसंदीदा, चैलेंज प्रगति, डाउनलोड ऑडियो और सेटिंग्स को इस डिवाइस से स्थायी रूप से हटा देगा। इसे वापस नहीं किया जा सकता।',
+    'This permanently removes your breathing history, favorites, challenge progress, music playlists and history, downloaded audio and music, and settings from this device. This cannot be undone.',
+    'यह आपके श्वास इतिहास, पसंदीदा, चैलेंज प्रगति, संगीत प्लेलिस्ट और इतिहास, डाउनलोड ऑडियो व संगीत, और सेटिंग्स को इस डिवाइस से स्थायी रूप से हटा देगा। इसे वापस नहीं किया जा सकता।',
   );
   String get alsoDeleteCloud => _t('Also delete my cloud backup and account', 'मेरा क्लाउड बैकअप और अकाउंट भी हटाएँ');
   String get deleteEverything => _t('Delete everything', 'सब कुछ हटाएँ');
@@ -455,6 +457,101 @@ class AppStrings {
   String get readyToBreathe => _t('Ready to breathe?', 'साँस लेने के लिए तैयार?');
   String get seeAll => _t('See all', 'सभी देखें');
   String goalToday(int done, int goal) => _t('$done of $goal min today', 'आज $goal में से $done मिनट');
+
+  // Music
+  String get musicTab => _t('Music', 'संगीत');
+  String get musicSubtitle =>
+      _t('Calming music to relax, focus and unwind.', 'आराम, एकाग्रता और सुकून के लिए शांत संगीत।');
+  String get searchMusic => _t('Search tracks, artists or categories', 'ट्रैक, कलाकार या श्रेणी खोजें');
+  String get myMusic => _t('My Music', 'मेरा संगीत');
+  String get featuredMusic => _t('Featured', 'विशेष');
+  String get musicCategories => _t('Categories', 'श्रेणियाँ');
+  String get recentlyPlayed => _t('Recently played', 'हाल ही में सुना');
+  String get downloadedMusic => _t('Downloaded music', 'डाउनलोड किया संगीत');
+  String get downloadedShort => _t('Downloaded', 'डाउनलोड');
+  String get playlists => _t('Playlists', 'प्लेलिस्ट');
+  String tracksCount(int n) => _hi ? '$n ट्रैक' : (n == 1 ? '1 track' : '$n tracks');
+  String resultsCount(int n) => _hi ? '$n परिणाम' : (n == 1 ? '1 result' : '$n results');
+  String get playAll => _t('Play all', 'सभी चलाएँ');
+  String get shuffle => _t('Shuffle', 'शफ़ल');
+  String get shuffleOn => _t('Turn shuffle on', 'शफ़ल चालू करें');
+  String get shuffleOff => _t('Turn shuffle off', 'शफ़ल बंद करें');
+  String get next => _t('Next', 'अगला');
+  String get previous => _t('Previous', 'पिछला');
+  String repeatLabel(MusicRepeat m) => switch (m) {
+    MusicRepeat.off => _t('Repeat: off', 'दोहराएँ: बंद'),
+    MusicRepeat.all => _t('Repeat: all', 'दोहराएँ: सभी'),
+    MusicRepeat.one => _t('Repeat: this track', 'दोहराएँ: यह ट्रैक'),
+  };
+  String get nowPlaying => _t('Now playing', 'अभी चल रहा है');
+  String get aboutTrack => _t('About this track', 'इस ट्रैक के बारे में');
+  String get moreOptions => _t('More options', 'और विकल्प');
+  String get addToPlaylist => _t('Add to playlist', 'प्लेलिस्ट में जोड़ें');
+  String get removeFromPlaylist => _t('Remove from playlist', 'प्लेलिस्ट से हटाएँ');
+  String get newPlaylist => _t('New playlist', 'नई प्लेलिस्ट');
+  String get renamePlaylist => _t('Rename playlist', 'प्लेलिस्ट का नाम बदलें');
+  String get deletePlaylist => _t('Delete playlist', 'प्लेलिस्ट हटाएँ');
+  String deletePlaylistBody(String name) => _t(
+    '“$name” will be deleted. The music itself stays in the library.',
+    '“$name” हटा दी जाएगी। संगीत लाइब्रेरी में बना रहेगा।',
+  );
+  String get playlistNameHint => _t('e.g. Morning calm', 'जैसे: सुबह की शांति');
+  String get save => _t('Save', 'सेव करें');
+  String addedToPlaylist(String name) => _t('Added to “$name”', '“$name” में जोड़ा गया');
+  String get alreadyInPlaylist => _t('Already in this playlist', 'पहले से इस प्लेलिस्ट में है');
+  String get emptyPlaylist => _t(
+    'This playlist is empty. Use “Add to playlist” on any track.',
+    'यह प्लेलिस्ट खाली है। किसी भी ट्रैक पर “प्लेलिस्ट में जोड़ें” चुनें।',
+  );
+  String get dragToReorder => _t('Drag ⋮⋮ to reorder', 'क्रम बदलने के लिए ⋮⋮ खींचें');
+  String get downloadForOffline => _t('Download for offline', 'ऑफ़लाइन के लिए डाउनलोड करें');
+  String get downloadedForOffline => _t('Downloaded — available offline', 'डाउनलोड हो गया — ऑफ़लाइन उपलब्ध');
+  String offlineStorage(String size) => _t('Offline music uses $size', 'ऑफ़लाइन संगीत $size उपयोग कर रहा है');
+  String get deleteAll => _t('Delete all', 'सभी हटाएँ');
+  String get deleteAllMusicDownloadsBody => _t(
+    'All downloaded music will be removed from this device.',
+    'सभी डाउनलोड किया गया संगीत इस डिवाइस से हटा दिया जाएगा।',
+  );
+  String get noRecentMusic => _t('Music you play will show up here.', 'आप जो संगीत सुनेंगे, वह यहाँ दिखेगा।');
+  String get noFavoriteMusic =>
+      _t('Tap ♡ on any track to save it here.', 'किसी भी ट्रैक पर ♡ दबाकर उसे यहाँ सेव करें।');
+  String get noDownloadedMusic =>
+      _t('Download tracks to listen without internet.', 'बिना इंटरनेट सुनने के लिए ट्रैक डाउनलोड करें।');
+  String get noPlaylists => _t('Create a playlist of the music you love.', 'अपने पसंदीदा संगीत की प्लेलिस्ट बनाएँ।');
+  String get clearHistory => _t('Clear history', 'इतिहास साफ़ करें');
+  String get clear => _t('Clear', 'साफ़ करें');
+  String get emptyCategory =>
+      _t('New music for this category is coming soon.', 'इस श्रेणी का नया संगीत जल्द आ रहा है।');
+  String get noResults => _t('No music matches your search.', 'आपकी खोज से कोई संगीत नहीं मिला।');
+  String get sortBy => _t('Sort by', 'क्रम');
+  String sortLabel(MusicSort o) => switch (o) {
+    MusicSort.featured => _t('Recommended', 'सुझाया गया'),
+    MusicSort.titleAz => _t('Title A–Z', 'शीर्षक A–Z'),
+    MusicSort.artistAz => _t('Artist A–Z', 'कलाकार A–Z'),
+    MusicSort.shortest => _t('Shortest', 'सबसे छोटा'),
+    MusicSort.longest => _t('Longest', 'सबसे लंबा'),
+    MusicSort.newest => _t('Newest', 'सबसे नया'),
+  };
+  String get musicEmptyTitle => _t('Music is on its way', 'संगीत जल्द आ रहा है');
+  String get musicEmptyBody => _t(
+    'Our calming music library will appear here soon. Your downloads and playlists will live here too.',
+    'हमारी शांत संगीत लाइब्रेरी जल्द यहाँ दिखेगी। आपके डाउनलोड और प्लेलिस्ट भी यहीं होंगे।',
+  );
+  String get musicOfflineTitle => _t('You’re offline', 'आप ऑफ़लाइन हैं');
+  String get musicOfflineBanner => _t(
+    'You’re offline. Downloaded music still plays; other tracks need internet.',
+    'आप ऑफ़लाइन हैं। डाउनलोड किया संगीत चलेगा; बाकी ट्रैक के लिए इंटरनेट चाहिए।',
+  );
+  String get musicOffline => _t(
+    'This track needs an internet connection. Download it to listen offline.',
+    'इस ट्रैक के लिए इंटरनेट चाहिए। ऑफ़लाइन सुनने के लिए डाउनलोड करें।',
+  );
+  String get musicNotAvailable => _t('Music isn’t available yet.', 'संगीत अभी उपलब्ध नहीं है।');
+  String get musicPlaybackError => _t('This track couldn’t be played.', 'यह ट्रैक चलाया नहीं जा सका।');
+  String musicSkipped(int n) => _t(
+    n == 1 ? '1 track was skipped because you’re offline.' : '$n tracks were skipped because you’re offline.',
+    'ऑफ़लाइन होने के कारण $n ट्रैक छोड़े गए।',
+  );
   String get progressTooltip => _t('Your progress', 'आपकी प्रगति');
 }
 

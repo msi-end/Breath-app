@@ -5,6 +5,9 @@ import '../l10n/strings.dart';
 import '../services/account_service.dart';
 import '../services/ads_service.dart';
 import '../services/audio_download_service.dart';
+import '../services/music_downloads.dart';
+import '../services/music_player.dart';
+import '../services/my_music_store.dart';
 import '../services/progress_store.dart';
 import '../services/settings_controller.dart';
 import '../services/usage_tracker.dart';
@@ -14,6 +17,7 @@ import '../widgets/nature_background.dart';
 import 'account_screen.dart';
 import 'audio_library_screen.dart';
 import 'info_screen.dart';
+import 'music/music_nav.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -116,6 +120,18 @@ class SettingsScreen extends StatelessWidget {
                   subtitle: Text(s.downloadedCount(audio.downloadedIds.length, formatBytes(audio.totalBytes))),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => push(const AudioLibraryScreen()),
+                ),
+                ListTile(
+                  leading: const IconBadge(Icons.library_music_outlined, color: AppColors.lavender, size: 38),
+                  title: Text(s.downloadedMusic),
+                  subtitle: Text(
+                    s.downloadedCount(
+                      context.watch<MusicDownloads>().downloadedIds.length,
+                      formatBytes(context.watch<MusicDownloads>().totalBytes),
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => openMyMusic(context, tab: 2),
                 ),
               ],
             ),
@@ -249,6 +265,9 @@ class SettingsScreen extends StatelessWidget {
     final audio = context.read<AudioDownloadService>();
     final settings = context.read<SettingsController>();
     final usage = context.read<UsageTracker>();
+    final music = context.read<MusicPlayer>();
+    final musicDownloads = context.read<MusicDownloads>();
+    final myMusic = context.read<MyMusicStore>();
     if (alsoCloud) {
       await account.deleteCloudData();
     } else {
@@ -256,6 +275,9 @@ class SettingsScreen extends StatelessWidget {
     }
     await progress.clear();
     await audio.deleteAll();
+    await music.close();
+    await musicDownloads.deleteAll();
+    await myMusic.clear();
     await usage.clear();
     await settings.reset();
     messenger.showSnackBar(SnackBar(content: Text(s.dataDeleted)));

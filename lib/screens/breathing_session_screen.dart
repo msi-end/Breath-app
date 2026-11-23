@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -16,6 +15,7 @@ import '../services/audio_download_service.dart';
 import '../services/breathing_clock.dart';
 import '../services/challenge_service.dart';
 import '../services/date_utils.dart';
+import '../services/music_player.dart';
 import '../services/progress_store.dart';
 import '../services/settings_controller.dart';
 import '../services/voice_guide.dart';
@@ -52,7 +52,10 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
   late bool _hapticsOn;
   late final bool _gentle;
   bool _audioOn = false;
-  AudioPlayer? _player;
+  late final MusicPlayer _music;
+
+  bool get _guideActive =>
+      _audioOn && _music.isLoaded && _music.isCurrent('${MusicPlayer.guidancePrefix}${widget.technique.id}');
 
   _Stage _stage = _Stage.preparing;
   double _prepElapsed = 0;
@@ -68,6 +71,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
   void initState() {
     super.initState();
     final settings = context.read<SettingsController>();
+    _music = context.read<MusicPlayer>();
     _voiceOn = settings.voiceGuidance;
     _hapticsOn = settings.haptics;
     _gentle = widget.gentle ?? settings.gentleModeDefault;
@@ -84,7 +88,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
     WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
     _voice.stop();
-    _player?.dispose();
+    if (_guideActive) unawaited(_music.pause());
     AdsService.instance.release();
     _keepAwake(false);
     super.dispose();
@@ -139,7 +143,7 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
   void _pause() {
     setState(() => _stage = _Stage.paused);
     _voice.stop();
-    _player?.pause();
+    if (_guideActive) unawaited(_music.pause());
   }
 
   void _resume() {
@@ -152,14 +156,14 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
         _lastSerial = -1;
       }
     });
-    if (_audioOn) _player?.play();
+    if (_guideActive && !_music.isPlaying) unawaited(_music.togglePlay());
   }
 
   Future<void> _toggleAudio() async {
     final s = context.s;
     if (_audioOn) {
+      if (_guideActive) await _music.pause();
       setState(() => _audioOn = false);
-      await _player?.pause();
       return;
     }
     final path = context.read<AudioDownloadService>().localPath(widget.technique.id);
@@ -170,20 +174,16 @@ class _BreathingSessionScreenState extends State<BreathingSessionScreen>
       return;
     }
     setState(() => _audioOn = true);
-    try {
-      final player = _player ??= AudioPlayer();
-      if (player.audioSource == null) await player.setFilePath(path);
-      if (_stage != _Stage.paused && _stage != _Stage.finished) unawaited(player.play());
-    } catch (_) {
-      if (mounted) setState(() => _audioOn = false);
-    }
+    await _music.playGuidance(techniqueId: widget.technique.id, title: context.l(widget.technique.name), path: path);
+    if (_stage == _Stage.paused || _stage == _Stage.finished) await _music.pause();
+    if (mounted && _music.error != null) setState(() => _audioOn = false);
   }
 
   Future<void> _finish({required bool completed}) async {
     if (_stage == _Stage.finished) return;
     setState(() => _stage = _Stage.finished);
     _voice.stop();
-    unawaited(_player?.stop());
+    if (_guideActive) unawaited(_music.pause());
     _keepAwake(false);
     final seconds = _clock.elapsed.round();
     if (!_recorded) {

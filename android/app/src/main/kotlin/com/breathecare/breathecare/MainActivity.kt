@@ -1,5 +1,6 @@
 package com.breathecare.breathecare
 
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 
-class MainActivity : FlutterActivity()
+/** Hosts Flutter; AudioServiceActivity enables background music playback. */
+class MainActivity : AudioServiceActivity()

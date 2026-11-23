@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/l_text.dart';
 import '../l10n/strings.dart';
 import '../models/technique.dart';
 import '../services/audio_download_service.dart';
 import '../services/date_utils.dart';
+import '../services/music_player.dart';
 import '../theme/app_colors.dart';
 import 'common.dart';
 
@@ -27,7 +28,11 @@ class AudioGuidanceCard extends StatelessWidget {
     Widget body;
     switch (state.status) {
       case AudioStatus.downloaded:
-        body = _LocalPlayer(path: audio.localPath(technique.id)!, onDelete: () => _confirmDelete(context, audio));
+        body = _LocalPlayer(
+          technique: technique,
+          path: audio.localPath(technique.id)!,
+          onDelete: () => _confirmDelete(context, audio),
+        );
       case AudioStatus.downloading:
         body = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,86 +147,48 @@ class _StatusPill extends StatelessWidget {
   }
 }
 
-class _LocalPlayer extends StatefulWidget {
-  const _LocalPlayer({required this.path, required this.onDelete});
+/// Plays downloaded guidance through the app's shared player, so it gets the
+/// same background playback and lock-screen controls as music.
+class _LocalPlayer extends StatelessWidget {
+  const _LocalPlayer({required this.technique, required this.path, required this.onDelete});
 
+  final Technique technique;
   final String path;
   final VoidCallback onDelete;
 
   @override
-  State<_LocalPlayer> createState() => _LocalPlayerState();
-}
-
-class _LocalPlayerState extends State<_LocalPlayer> {
-  final _player = AudioPlayer();
-  bool _ready = false;
-  bool _error = false;
-  double? _dragValue;
-
-  @override
-  void initState() {
-    super.initState();
-    _init();
-  }
-
-  Future<void> _init() async {
-    try {
-      await _player.setFilePath(widget.path);
-      if (mounted) setState(() => _ready = true);
-    } catch (_) {
-      if (mounted) setState(() => _error = true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _player.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final s = context.s;
-    if (_error) {
-      return Row(
-        children: [
-          Expanded(child: Text(s.audioCorrupt)),
-          TextButton(onPressed: widget.onDelete, child: Text(s.delete)),
-        ],
-      );
-    }
-    return StreamBuilder<PlayerState>(
-      stream: _player.playerStateStream,
-      builder: (context, snap) {
-        final playing = snap.data?.playing ?? false;
-        final completed = snap.data?.processingState == ProcessingState.completed;
-        return Column(
-          children: [
-            StreamBuilder<Duration>(
-              stream: _player.positionStream,
-              builder: (context, posSnap) {
-                final total = _player.duration ?? Duration.zero;
-                final pos = posSnap.data ?? Duration.zero;
-                final max = total.inMilliseconds.toDouble();
-                final value = (_dragValue ?? pos.inMilliseconds.toDouble()).clamp(0.0, max <= 0 ? 1.0 : max);
+    final music = context.watch<MusicPlayer>();
+    final id = '${MusicPlayer.guidancePrefix}${technique.id}';
+    final active = music.isLoaded && music.isCurrent(id);
+    final playing = active && music.isPlaying;
+    Future<void> start() => music.playGuidance(techniqueId: technique.id, title: context.l(technique.name), path: path);
+
+    return Column(
+      children: [
+        if (active)
+          StreamBuilder<Duration?>(
+            stream: music.player.durationStream,
+            builder: (context, d) => StreamBuilder<Duration>(
+              stream: music.player.positionStream,
+              builder: (context, p) {
+                final total = (d.data ?? Duration.zero).inMilliseconds.toDouble();
+                final pos = (p.data ?? Duration.zero).inMilliseconds.toDouble().clamp(0.0, total <= 0 ? 1.0 : total);
                 return Column(
                   children: [
                     Slider(
-                      value: value,
-                      max: max <= 0 ? 1 : max,
-                      onChanged: _ready ? (v) => setState(() => _dragValue = v) : null,
-                      onChangeEnd: (v) async {
-                        await _player.seek(Duration(milliseconds: v.round()));
-                        if (mounted) setState(() => _dragValue = null);
-                      },
+                      value: pos,
+                      max: total <= 0 ? 1 : total,
+                      onChanged: (v) => music.seek(Duration(milliseconds: v.round())),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 22),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(formatClock(value ~/ 1000), style: Theme.of(context).textTheme.labelSmall),
-                          Text(formatClock(total.inSeconds), style: Theme.of(context).textTheme.labelSmall),
+                          Text(formatClock(pos ~/ 1000), style: Theme.of(context).textTheme.labelSmall),
+                          Text(formatClock(total ~/ 1000), style: Theme.of(context).textTheme.labelSmall),
                         ],
                       ),
                     ),
@@ -229,49 +196,42 @@ class _LocalPlayerState extends State<_LocalPlayer> {
                 );
               },
             ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  tooltip: s.replay,
-                  onPressed: _ready
-                      ? () async {
-                          await _player.seek(Duration.zero);
-                          unawaited(_player.play());
-                        }
-                      : null,
-                  icon: const Icon(Icons.replay_rounded),
-                ),
-                const SizedBox(width: 12),
-                IconButton.filled(
-                  iconSize: 34,
-                  tooltip: playing && !completed ? s.pause : s.play,
-                  onPressed: !_ready
-                      ? null
-                      : () async {
-                          if (completed) {
-                            await _player.seek(Duration.zero);
-                            unawaited(_player.play());
-                          } else if (playing) {
-                            await _player.pause();
-                          } else {
-                            unawaited(_player.play());
-                          }
-                        },
-                  icon: Icon(playing && !completed ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                ),
-                const SizedBox(width: 12),
-                IconButton(
-                  tooltip: s.deleteDownload,
-                  onPressed: widget.onDelete,
-                  icon: const Icon(Icons.delete_outline_rounded),
-                ),
-              ],
+          ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              tooltip: s.replay,
+              onPressed: () async {
+                if (active) {
+                  await music.seek(Duration.zero);
+                  if (!music.isPlaying) await music.togglePlay();
+                } else {
+                  await start();
+                }
+              },
+              icon: const Icon(Icons.replay_rounded),
+            ),
+            const SizedBox(width: 12),
+            IconButton.filled(
+              iconSize: 34,
+              tooltip: playing ? s.pause : s.play,
+              onPressed: () => active ? music.togglePlay() : start(),
+              icon: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
+            ),
+            const SizedBox(width: 12),
+            IconButton(
+              tooltip: s.deleteDownload,
+              onPressed: () async {
+                if (active) await music.close();
+                onDelete();
+              },
+              icon: const Icon(Icons.delete_outline_rounded),
             ),
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 }

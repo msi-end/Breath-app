@@ -6,6 +6,11 @@ service firebase.storage {
       allow read: if true;
       allow write: if false;
     }
+    // Music library: catalog.json, MP3s and cover images are public read-only.
+    match /music/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
     match /{allPaths=**} {
       allow read, write: if false;
     }

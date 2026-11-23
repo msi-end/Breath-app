@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "updated": "2026-11-23",
+  "tracks": [
+    {
+      "id": "morning-stillness",
+      "title": "Morning Stillness",
+      "title_hi": "सुबह की स्थिरता",
+      "artist": "Your Artist Name",
+      "category": "piano",
+      "duration": 245,
+      "description": "A slow, gentle piano piece to begin the day calmly.",
+      "description_hi": "दिन की शांत शुरुआत के लिए धीमा, कोमल पियानो।",
+      "audio": "music/audio/morning-stillness.mp3",
+      "cover": "music/covers/morning-stillness.jpg",
+      "added": "2026-11-20",
+      "featured": true
+    },
+    {
+      "id": "soft-bansuri",
+      "title": "Soft Bansuri",
+      "artist": "Your Artist Name",
+      "category": "flute",
+      "duration": 412,
+      "description": "Breathy bansuri over a warm drone.",
+      "audio": "music/audio/soft-bansuri.mp3",
+      "cover": "music/covers/soft-bansuri.jpg",
+      "added": "2026-11-21"
+    }
+  ]
+}

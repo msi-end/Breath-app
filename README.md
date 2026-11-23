@@ -10,6 +10,10 @@ Free, ad-supported (Google AdMob), English + Hindi, light & dark themes, and ful
 | ![](docs/screenshots/home.png) | ![](docs/screenshots/home-more.png) | ![](docs/screenshots/home-dark.png) |
 | **Guided session** | **Session (dark)** | **Settings** |
 | ![](docs/screenshots/session.png) | ![](docs/screenshots/session-dark.png) | ![](docs/screenshots/settings.png) |
+| **Music** | **Music categories** | **Music player** |
+| ![](docs/screenshots/music.png) | ![](docs/screenshots/music-categories.png) | ![](docs/screenshots/music-player.png) |
+| **Music category** | **My Music** | **Music (dark)** |
+| ![](docs/screenshots/music-category.png) | ![](docs/screenshots/my-music.png) | ![](docs/screenshots/music-dark.png) |
 | **Techniques** | **Progress** | **Daily Challenges** |
 | ![](docs/screenshots/techniques.png) | ![](docs/screenshots/progress.png) | ![](docs/screenshots/challenges.png) |
 
@@ -31,6 +35,78 @@ Free, ad-supported (Google AdMob), English + Hindi, light & dark themes, and ful
 | **Audio guidance** | MP3s downloaded once from Firebase Storage, stored on device, played offline. Download progress, downloaded badge, retry, cancel, delete, delete-all, storage used. Player: Play/Pause, Replay, seek bar. |
 | **Account (optional)** | Invited after ~10 days of use (max twice). User ID + PIN, Login / Create Account / Maybe Later. Back up & restore progress (Firestore). The app never requires login. |
 | **Settings** | English / हिन्दी, Light / Dark / System theme, voice guidance & volume, haptics, gentle-mode default, downloaded audio management, account, Privacy Policy, Terms, About, ad privacy choices (when required), **Delete My Data**. |
+
+## Music tab
+
+A dedicated **Music** tab (between Learn and Progress) with:
+
+- **Library:** featured tracks, 15 categories (each opens its own page), search by title / artist / category, category filters and sorting (Recommended, A–Z, artist, shortest, longest, newest).
+- **Player:** full-screen player with cover art, title and artist, play/pause, next/previous, seek bar with times, shuffle, repeat (off / all / one), favorite, download, add to playlist, and "About this track".
+- **Mini player:** persistent above the tab bar (and on music pages), with cover, title, play/pause and close. Tap it to open the full player.
+- **Background playback:** music keeps playing across tabs, with the screen locked, and from the notification / lock-screen media controls (`just_audio_background`).
+- **Downloads:** one-time download into app storage, with progress, a downloaded indicator, cancel, retry and delete. Downloaded tracks play offline.
+- **My Music:** Recently played, Favorites, Downloaded and Playlists (create, rename, delete, reorder, add/remove tracks).
+- **Memory:** remembers the last track and position (for tracks longer than 3 minutes), plus shuffle and repeat.
+- **Offline:** the catalog and cover images are cached on the device. If a track can't be reached, the app says so and skips it.
+
+Breathing-guidance audio uses the same player, so it also gets background playback and lock-screen controls.
+
+### Categories (use these ids in `catalog.json`)
+
+| id | Name | id | Name |
+| --- | --- | --- | --- |
+| `relaxation` | Relaxation | `stress` | Stress Relief |
+| `meditation` | Meditation | `focus` | Focus |
+| `guided` | Guided Meditation | `ambient` | Peaceful Ambient |
+| `piano` | Calm Piano | `yoga` | Yoga |
+| `instrumental` | Instrumental | `mindfulness` | Mindfulness |
+| `flute` | Bansuri & Flute | `morning` | Gentle Morning |
+| `indian` | Indian Classical Calm | `short` | Short Relaxation (also shows every track ≤ 5 min) |
+| `bowls` | Singing Bowls | | |
+
+Categories only appear once they contain at least one track. Names, descriptions and colors live in `lib/data/music_categories.dart`.
+
+### Uploading music to Firebase Storage
+
+1. **Configure Firebase** (see *Getting started → Firebase* below) and deploy `storage.rules`. It makes everything under `music/` public read-only and blocks writes from the app.
+2. **Prepare files:**
+   - **Audio:** MP3, 44.1 kHz, 128–192 kbps (about 1–1.5 MB per minute). Normalise loudness so tracks play at a similar volume (around −16 LUFS).
+   - **Covers:** square JPG/PNG/WebP, 800×800 px, under 300 KB. Optional category covers go in `music/covers/categories/<category-id>.jpg`. Without a cover, the app draws a nature-style cover in the category colors.
+   - **File names:** lowercase, with hyphens, e.g. `morning-stillness.mp3`.
+3. **Create `catalog.json`** — the list of tracks the app shows. Start from `docs/music/catalog.example.json`, or generate it:
+   ```bash
+   pip install mutagen   # optional: reads durations automatically
+   python3 tools/make_music_catalog.py my_music --artist "Your Name" > catalog.json
+   ```
+   Fields: `id` (unique), `title` (+ optional `title_hi`), `artist`, `category`, `duration` (seconds), `description` (+ optional `description_hi`), `audio`, `cover` (optional), `added` (YYYY-MM-DD), `featured` (true/false).
+4. **Upload**, keeping this layout:
+   ```
+   music/
+     catalog.json
+     audio/<id>.mp3
+     covers/<id>.jpg
+     covers/categories/<category-id>.jpg   (optional)
+   ```
+   - **Easiest — Firebase Console:** open your project → **Storage** → create the `music` folder and its `audio` and `covers` subfolders → **Upload file** (you can drag several at once) → upload `catalog.json` into `music/`.
+   - **Command line** (Google Cloud SDK):
+     ```bash
+     gsutil -m cp -r music gs://<your-project>.appspot.com/
+     ```
+     The bucket name is shown at the top of the Storage page.
+5. **To add or change tracks later,** upload the new files and the updated `catalog.json`. The app downloads the latest catalog every time it opens, or when you pull down to refresh on the Music tab.
+
+### Music licensing
+
+Only upload music you own or are licensed to **distribute inside an app as downloadable/streamed tracks**. Many "free" libraries forbid exactly that:
+
+- **Pixabay** prohibits distributing its (non-CC0) audio "on a standalone basis", which is what a music library does ([license](https://pixabay.com/en/service/license/), [terms](https://pixabay.com/en/service/terms/)).
+- **Royalty-free stores** usually allow use *inside* an app but not redistribution of the raw files. Some charge extra for music used without voice-over (e.g. [MeditationMusicLibrary](https://meditationmusiclibrary.com/collections/piano)). Read the clause on apps and redistribution, or ask for an app/streaming license ([TunePocket's guide](https://www.tunepocket.com/how-to-properly-license-music-for-your-meditation-relaxation-or-sleep-app/)).
+- **Safer options:**
+  - Commission or produce your own music (you own it).
+  - License from a library that explicitly allows meditation/wellness apps.
+  - Use CC0 tracks.
+  - Use CC BY tracks, crediting the artist in `artist`/`description` as the license requires.
+  - Use **public-domain compositions** (e.g. Satie, Debussy) only in a recording you own or that is itself released as public domain or CC0. The *recording* has its own copyright.
 
 ## Advertising rules (enforced in `lib/services/ads_service.dart`)
 

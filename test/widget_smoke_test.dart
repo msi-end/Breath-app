@@ -9,6 +9,11 @@ import 'package:breathecare/screens/breathing_session_screen.dart';
 import 'package:breathecare/services/account_service.dart';
 import 'package:breathecare/services/ads_service.dart';
 import 'package:breathecare/services/audio_download_service.dart';
+import 'package:breathecare/models/music.dart';
+import 'package:breathecare/services/music_downloads.dart';
+import 'package:breathecare/services/music_library.dart';
+import 'package:breathecare/services/music_player.dart';
+import 'package:breathecare/services/my_music_store.dart';
 import 'package:breathecare/services/progress_store.dart';
 import 'package:breathecare/services/settings_controller.dart';
 import 'package:breathecare/services/usage_tracker.dart';
@@ -22,6 +27,9 @@ Future<Widget> buildApp({String lang = 'en', Widget? home}) async {
   final prefs = await SharedPreferences.getInstance();
   final usage = UsageTracker(prefs);
   await usage.recordOpen();
+  final library = MusicLibrary.withTracks(prefs, demoTracks);
+  final downloads = MusicDownloads(library);
+  final mine = MyMusicStore(prefs);
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => SettingsController(prefs)),
@@ -29,10 +37,27 @@ Future<Widget> buildApp({String lang = 'en', Widget? home}) async {
       ChangeNotifierProvider(create: (_) => AudioDownloadService()),
       ChangeNotifierProvider(create: (_) => AccountService(prefs)),
       Provider.value(value: usage),
+      ChangeNotifierProvider.value(value: library),
+      ChangeNotifierProvider.value(value: downloads),
+      ChangeNotifierProvider.value(value: mine),
+      ChangeNotifierProvider.value(value: MusicPlayer(prefs, library, downloads, mine)),
     ],
     child: BreatheCareApp(home: home),
   );
 }
+
+const demoTracks = [
+  MusicTrack(
+    id: 'a',
+    title: 'Morning Stillness',
+    artist: 'Asha',
+    categoryId: 'piano',
+    durationSeconds: 245,
+    featured: true,
+  ),
+  MusicTrack(id: 'b', title: 'Soft Bansuri', artist: 'Ravi', categoryId: 'flute', durationSeconds: 412),
+  MusicTrack(id: 'c', title: 'Quiet Focus', artist: 'Mira', categoryId: 'focus', durationSeconds: 900),
+];
 
 void usePhone(WidgetTester tester) {
   tester.view.physicalSize = const Size(1170, 2532); // 390 x 844 logical
@@ -50,7 +75,12 @@ void main() {
       await tester.pumpWidget(await buildApp(lang: lang));
       await tester.pumpAndSettle();
       expect(find.byType(NavigationBar), findsOneWidget);
-      for (final icon in [Icons.menu_book_outlined, Icons.insights_outlined, Icons.settings_outlined]) {
+      for (final icon in [
+        Icons.menu_book_outlined,
+        Icons.music_note_outlined,
+        Icons.insights_outlined,
+        Icons.settings_outlined,
+      ]) {
         await tester.tap(find.byIcon(icon));
         await tester.pumpAndSettle();
       }
