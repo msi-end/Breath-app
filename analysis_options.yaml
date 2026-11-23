@@ -1,0 +1,17 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+  errors:
+    # Flutter 3.47+ marks package:flutter/material.dart as deprecated in favour
+    # of package:material_ui. flutter_localizations and the plugins used here
+    # still depend on flutter/material, so we keep using it for consistency.
+    deprecated_member_use: ignore
+
+linter:
+  rules:
+    prefer_single_quotes: true
+    prefer_const_constructors: true
