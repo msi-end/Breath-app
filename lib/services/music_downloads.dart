@@ -4,18 +4,44 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/music.dart';
 import 'audio_download_service.dart' show AudioError, AudioStatus, AudioTrackState;
 import 'firebase_bootstrap.dart';
 import 'music_library.dart';
 
-/// Downloads music once into app storage for offline listening.
+/// Keeps music in app storage so a track is fetched from the server only
+/// once: either downloaded on request, or saved automatically the first time
+/// it's played (see [MusicPlayer]). Saved tracks then always play offline.
 class MusicDownloads extends ChangeNotifier {
-  MusicDownloads(this._library);
+  MusicDownloads(this._library, [this._prefs]);
+
+  static const _kAutoSave = 'music.autoSave';
 
   final MusicLibrary _library;
+  final SharedPreferences? _prefs;
   Directory? _dir;
+
+  /// Save every track the first time it's streamed (on by default).
+  bool get autoSave => _prefs?.getBool(_kAutoSave) ?? true;
+
+  Future<void> setAutoSave(bool v) async {
+    await _prefs?.setBool(_kAutoSave, v);
+    notifyListeners();
+  }
+
+  /// Where a track is (or will be) stored. Used by the player's
+  /// save-while-playing cache, so both paths share one file per track.
+  File? fileFor(String id) => _dir == null ? null : File('${_dir!.path}/$id.mp3');
+
+  /// Called when the player has finished saving a streamed track.
+  Future<void> markSaved(MusicTrack track) async {
+    final f = fileFor(track.id);
+    if (f == null || !await f.exists() || isDownloaded(track.id)) return;
+    unawaited(_library.coverFile(track.id, track.coverPath));
+    _set(track.id, AudioTrackState(AudioStatus.downloaded, progress: 1, bytes: await f.length()));
+  }
   final Map<String, AudioTrackState> _states = {};
   final Map<String, DownloadTask> _tasks = {};
 
@@ -27,7 +53,7 @@ class MusicDownloads extends ChangeNotifier {
       await for (final e in dir.list()) {
         if (e is! File) continue;
         final name = e.uri.pathSegments.last;
-        if (name.endsWith('.part')) {
+        if (name.endsWith('.part') || name.endsWith('.dl')) {
           await e.delete();
         } else if (name.endsWith('.mp3')) {
           _states[name.substring(0, name.length - 4)] = AudioTrackState(
@@ -73,7 +99,7 @@ class MusicDownloads extends ChangeNotifier {
       _set(id, const AudioTrackState(AudioStatus.failed, error: AudioError.storage));
       return;
     }
-    final part = File('${dir.path}/$id.mp3.part');
+    final part = File('${dir.path}/$id.mp3.dl');
     final target = File('${dir.path}/$id.mp3');
     _set(id, const AudioTrackState(AudioStatus.downloading));
     StreamSubscription<TaskSnapshot>? sub;
@@ -116,7 +142,11 @@ class MusicDownloads extends ChangeNotifier {
 
   Future<void> delete(String id) async {
     await cancel(id);
-    if (_dir != null) await _quietDelete(File('${_dir!.path}/$id.mp3'));
+    if (_dir != null) {
+      for (final ext in ['', '.mime', '.part']) {
+        await _quietDelete(File('${_dir!.path}/$id.mp3$ext'));
+      }
+    }
     _set(id, AudioTrackState.none);
   }
 
@@ -124,6 +154,14 @@ class MusicDownloads extends ChangeNotifier {
     for (final id in _states.keys.toList()) {
       await delete(id);
     }
+    // Also remove any partly saved files.
+    final dir = _dir;
+    if (dir == null) return;
+    try {
+      await for (final e in dir.list()) {
+        if (e is File) await _quietDelete(e);
+      }
+    } catch (_) {}
   }
 
   Future<void> _quietDelete(File f) async {

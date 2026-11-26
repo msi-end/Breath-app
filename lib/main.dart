@@ -13,6 +13,7 @@ import 'services/music_library.dart';
 import 'services/music_player.dart';
 import 'services/my_music_store.dart';
 import 'services/progress_store.dart';
+import 'services/reminder_service.dart';
 import 'services/settings_controller.dart';
 import 'services/usage_tracker.dart';
 import 'theme/app_colors.dart';
@@ -46,8 +47,14 @@ Future<void> main() async {
   await audio.init();
   final account = AccountService(prefs)..init();
 
+  final settings = SettingsController(prefs);
+  // Optional daily reminders (local notifications, off by default).
+  final reminders = ReminderService(prefs);
+  await reminders.init(lang: settings.lang);
+  settings.addListener(() => reminders.setLang(settings.lang));
+
   final library = MusicLibrary(prefs);
-  final musicDownloads = MusicDownloads(library);
+  final musicDownloads = MusicDownloads(library, prefs);
   final myMusic = MyMusicStore(prefs);
   final player = MusicPlayer(prefs, library, musicDownloads, myMusic);
   library.addListener(player.attachLibrary);
@@ -58,7 +65,8 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => SettingsController(prefs)),
+        ChangeNotifierProvider.value(value: settings),
+        ChangeNotifierProvider.value(value: reminders),
         ChangeNotifierProvider(create: (_) => ProgressStore(prefs)),
         ChangeNotifierProvider.value(value: audio),
         ChangeNotifierProvider.value(value: account),

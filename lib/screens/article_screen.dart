@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../data/explore.dart';
 import '../l10n/l_text.dart';
 import '../l10n/strings.dart';
 import '../models/article.dart';
 import '../theme/app_colors.dart';
+import '../widgets/youtube.dart';
 
 class ArticleScreen extends StatelessWidget {
   const ArticleScreen({super.key, required this.article});
@@ -51,12 +53,30 @@ class ArticleScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(22, 8, 22, 40),
             sliver: SliverList.list(
               children: [
+                Text(
+                  context.l(exploreCategoryInfo(article.category).name).toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 1.2, color: context.softText),
+                ),
+                const SizedBox(height: 6),
                 Text(context.l(article.title), style: theme.textTheme.headlineMedium),
+                if (article.subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    context.l(article.subtitle!),
+                    style: theme.textTheme.titleSmall?.copyWith(color: context.softText),
+                  ),
+                ],
                 const SizedBox(height: 6),
                 Text(
                   context.s.readMinutes(article.readMinutes),
                   style: theme.textTheme.labelLarge?.copyWith(color: context.softText),
                 ),
+                if (article.youtubeQuery != null) ...[
+                  const SizedBox(height: 14),
+                  Align(alignment: Alignment.centerLeft, child: YoutubeChip(article: article)),
+                  const SizedBox(height: 4),
+                  Text(context.s.youtubeNote, style: theme.textTheme.bodySmall?.copyWith(color: context.softText)),
+                ],
                 const SizedBox(height: 18),
                 for (final section in article.sections) ...[
                   if (section.heading != null) ...[

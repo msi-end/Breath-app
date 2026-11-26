@@ -21,7 +21,7 @@ class AppStrings {
 
   // Navigation
   String get tabHome => _t('Home', 'होम');
-  String get tabLearn => _t('Learn', 'सीखें');
+  String get tabExplore => _t('Explore', 'एक्सप्लोर');
   String get tabProgress => _t('Progress', 'प्रगति');
   String get tabSettings => _t('Settings', 'सेटिंग्स');
 
@@ -43,7 +43,7 @@ class AppStrings {
   String get emergencyCalmSubtitle =>
       _t('Feeling overwhelmed? Start gentle breathing instantly.', 'घबराहट हो रही है? तुरंत कोमल श्वास शुरू करें।');
   String get explore => _t('Explore', 'खोजें');
-  String get exploreTechniques => _t('Explore Techniques', 'तकनीकें देखें');
+  String get exploreTechniques => _t('All Techniques', 'सभी तकनीकें');
   String get exploreTechniquesSub => _t('10 guided breathing exercises', '10 निर्देशित श्वास अभ्यास');
   String get moodBreathing => _t('Mood-Based Breathing', 'मूड-आधारित श्वास');
   String get moodBreathingSub => _t('Breathing that fits how you feel', 'आपके मूड के अनुसार श्वास');
@@ -214,7 +214,19 @@ class AppStrings {
       _t('$done of $total challenges completed', '$total में से $done चैलेंज पूरे');
 
   // Learn
-  String get learnSubtitle => _t('Simple, friendly guides to breathing well.', 'अच्छी श्वास के लिए सरल और आसान गाइड।');
+  String get exploreSubtitle =>
+      _t('Yoga, pranayama, calm, herbs and healthy habits.', 'योग, प्राणायाम, शांति, जड़ी-बूटियाँ और अच्छी आदतें।');
+  String get searchExplore => _t('Search yoga, herbs, tips…', 'योग, जड़ी-बूटियाँ, टिप्स खोजें…');
+  String get pickOfTheDay => _t('Pick of the day', 'आज की पसंद');
+  String get watchOnYoutube => _t('Watch on YouTube', 'YouTube पर देखें');
+  String get youtubeNote => _t(
+    'Opens a YouTube search. Videos are by other creators — choose ones from qualified teachers.',
+    'YouTube पर खोज खुलेगी। वीडियो दूसरे क्रिएटर्स के हैं — योग्य शिक्षकों के वीडियो चुनें।',
+  );
+  String get youtubeFailed => _t('Couldn’t open YouTube. Check your connection.', 'YouTube नहीं खुल सका। अपना कनेक्शन जाँचें।');
+  String get noExploreResults => _t('Nothing found. Try another word.', 'कुछ नहीं मिला। कोई दूसरा शब्द आज़माएँ।');
+  String get practiceWithTimer =>
+      _t('Practice with the guided breathing timer', 'निर्देशित श्वास टाइमर के साथ अभ्यास करें');
   String get featured => _t('Featured', 'विशेष');
   String get allArticles => _t('All articles', 'सभी लेख');
   String readMinutes(int m) => _t('$m min read', '$m मिनट पढ़ें');
@@ -459,16 +471,16 @@ class AppStrings {
   String goalToday(int done, int goal) => _t('$done of $goal min today', 'आज $goal में से $done मिनट');
 
   // Music
-  String get musicTab => _t('Music', 'संगीत');
+  String get musicTab => _t('Listen', 'सुनें');
   String get musicSubtitle =>
-      _t('Calming music to relax, focus and unwind.', 'आराम, एकाग्रता और सुकून के लिए शांत संगीत।');
+      _t('Music to relax, focus, sleep and feel energised.', 'आराम, एकाग्रता, नींद और ऊर्जा के लिए संगीत।');
   String get searchMusic => _t('Search tracks, artists or categories', 'ट्रैक, कलाकार या श्रेणी खोजें');
   String get myMusic => _t('My Music', 'मेरा संगीत');
   String get featuredMusic => _t('Featured', 'विशेष');
   String get musicCategories => _t('Categories', 'श्रेणियाँ');
   String get recentlyPlayed => _t('Recently played', 'हाल ही में सुना');
-  String get downloadedMusic => _t('Downloaded music', 'डाउनलोड किया संगीत');
-  String get downloadedShort => _t('Downloaded', 'डाउनलोड');
+  String get downloadedMusic => _t('Music saved on device', 'डिवाइस पर सेव संगीत');
+  String get downloadedShort => _t('Saved', 'सेव किए');
   String get playlists => _t('Playlists', 'प्लेलिस्ट');
   String tracksCount(int n) => _hi ? '$n ट्रैक' : (n == 1 ? '1 track' : '$n tracks');
   String resultsCount(int n) => _hi ? '$n परिणाम' : (n == 1 ? '1 result' : '$n results');
@@ -553,6 +565,35 @@ class AppStrings {
     'ऑफ़लाइन होने के कारण $n ट्रैक छोड़े गए।',
   );
   String get progressTooltip => _t('Your progress', 'आपकी प्रगति');
+  String get autoSaveMusic => _t('Save music as you listen', 'सुनते समय संगीत सेव करें');
+  String get autoSaveMusicSub => _t(
+    'Tracks you play are kept on this device, so they’re never downloaded again and play offline.',
+    'चलाए गए ट्रैक इस डिवाइस पर रहते हैं, ताकि दोबारा डाउनलोड न हों और ऑफ़लाइन चलें।',
+  );
+
+  // Reminders
+  String get reminders => _t('Reminders', 'रिमाइंडर');
+  String get morningReminder => _t('Morning reminder', 'सुबह का रिमाइंडर');
+  String get morningReminderSub =>
+      _t('Breathing, yoga, music and tips to start the day.', 'दिन की शुरुआत के लिए श्वास, योग, संगीत और टिप्स।');
+  String get eveningReminder => _t('Evening wind-down', 'शाम का आराम');
+  String get eveningReminderSub =>
+      _t('Sleep music and relaxing breathing before bed.', 'सोने से पहले नींद का संगीत और आरामदायक श्वास।');
+  String reminderAt(String time) => _t('Every day at $time', 'रोज़ $time बजे');
+  String get notificationsBlocked => _t(
+    'Notifications are turned off for BreatheCare. You can allow them in your phone’s settings.',
+    'BreatheCare के नोटिफ़िकेशन बंद हैं। आप इन्हें फ़ोन की सेटिंग्स में चालू कर सकते हैं।',
+  );
+  String get remindersUnavailable =>
+      _t('Reminders aren’t available on this device.', 'इस डिवाइस पर रिमाइंडर उपलब्ध नहीं हैं।');
+  String get reminderInviteTitle => _t('A gentle daily reminder?', 'रोज़ एक हल्का रिमाइंडर?');
+  String reminderInviteBody(String time) => _t(
+    'Get one short nudge each morning at $time — a breathing exercise, a yoga pose, a tip or some music. You can change or turn it off any time in Settings.',
+    'हर सुबह $time बजे एक छोटा संकेत पाएँ — एक श्वास अभ्यास, योगासन, टिप या संगीत। आप इसे कभी भी सेटिंग्स में बदल या बंद कर सकते हैं।',
+  );
+  String get turnOn => _t('Turn on', 'चालू करें');
+  String get notNow => _t('Not now', 'अभी नहीं');
+  String get reminderOn => _t('Reminder set. See you tomorrow morning!', 'रिमाइंडर सेट हो गया। कल सुबह मिलते हैं!');
 }
 
 extension AppStringsContext on BuildContext {

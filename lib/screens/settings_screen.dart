@@ -9,6 +9,7 @@ import '../services/music_downloads.dart';
 import '../services/music_player.dart';
 import '../services/my_music_store.dart';
 import '../services/progress_store.dart';
+import '../services/reminder_service.dart';
 import '../services/settings_controller.dart';
 import '../services/usage_tracker.dart';
 import '../theme/app_colors.dart';
@@ -121,6 +122,13 @@ class SettingsScreen extends StatelessWidget {
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => push(const AudioLibraryScreen()),
                 ),
+                SwitchListTile(
+                  secondary: const IconBadge(Icons.offline_pin_outlined, color: AppColors.mint, size: 38),
+                  title: Text(s.autoSaveMusic),
+                  subtitle: Text(s.autoSaveMusicSub),
+                  value: context.watch<MusicDownloads>().autoSave,
+                  onChanged: context.read<MusicDownloads>().setAutoSave,
+                ),
                 ListTile(
                   leading: const IconBadge(Icons.library_music_outlined, color: AppColors.lavender, size: 38),
                   title: Text(s.downloadedMusic),
@@ -135,6 +143,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const _RemindersGroup(),
             SectionHeader(s.account),
             _Group(
               children: [
@@ -268,6 +277,7 @@ class SettingsScreen extends StatelessWidget {
     final music = context.read<MusicPlayer>();
     final musicDownloads = context.read<MusicDownloads>();
     final myMusic = context.read<MyMusicStore>();
+    final reminders = context.read<ReminderService?>();
     if (alsoCloud) {
       await account.deleteCloudData();
     } else {
@@ -279,8 +289,97 @@ class SettingsScreen extends StatelessWidget {
     await musicDownloads.deleteAll();
     await myMusic.clear();
     await usage.clear();
+    await reminders?.clear();
     await settings.reset();
     messenger.showSnackBar(SnackBar(content: Text(s.dataDeleted)));
+  }
+}
+
+class _RemindersGroup extends StatelessWidget {
+  const _RemindersGroup();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final reminders = context.watch<ReminderService?>();
+    if (reminders == null) return const SizedBox.shrink();
+    final loc = MaterialLocalizations.of(context);
+
+    Future<void> toggle(bool on, Future<bool> Function(bool) set) async {
+      final messenger = ScaffoldMessenger.of(context);
+      if (!reminders.available) {
+        messenger.showSnackBar(SnackBar(content: Text(s.remindersUnavailable)));
+        return;
+      }
+      final ok = await set(on);
+      if (!ok) messenger.showSnackBar(SnackBar(content: Text(s.notificationsBlocked)));
+    }
+
+    Future<void> pick(TimeOfDay initial, Future<void> Function(TimeOfDay) set) async {
+      final t = await showTimePicker(context: context, initialTime: initial);
+      if (t != null) await set(t);
+    }
+
+    Widget row({
+      required IconData icon,
+      required Color color,
+      required String title,
+      required String sub,
+      required bool on,
+      required TimeOfDay time,
+      required Future<bool> Function(bool) set,
+      required Future<void> Function(TimeOfDay) setTime,
+    }) {
+      return Column(
+        children: [
+          SwitchListTile(
+            secondary: IconBadge(icon, color: color, size: 38),
+            title: Text(title),
+            subtitle: Text(sub),
+            value: on,
+            onChanged: (v) => toggle(v, set),
+          ),
+          if (on)
+            ListTile(
+              contentPadding: const EdgeInsets.only(left: 70, right: 16),
+              title: Text(s.reminderAt(loc.formatTimeOfDay(time))),
+              trailing: const Icon(Icons.schedule_rounded),
+              onTap: () => pick(time, setTime),
+            ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(s.reminders),
+        _Group(
+          children: [
+            row(
+              icon: Icons.wb_sunny_outlined,
+              color: AppColors.sun,
+              title: s.morningReminder,
+              sub: s.morningReminderSub,
+              on: reminders.morning,
+              time: reminders.morningTime,
+              set: reminders.setMorning,
+              setTime: reminders.setMorningTime,
+            ),
+            row(
+              icon: Icons.bedtime_outlined,
+              color: AppColors.lavender,
+              title: s.eveningReminder,
+              sub: s.eveningReminderSub,
+              on: reminders.evening,
+              time: reminders.eveningTime,
+              set: reminders.setEvening,
+              setTime: reminders.setEveningTime,
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 

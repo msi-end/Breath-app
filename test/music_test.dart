@@ -155,7 +155,7 @@ void main() {
     final (app, _, _) = await buildApp(home: const Scaffold(body: MusicScreen()));
     await t.pumpWidget(app);
     await t.pumpAndSettle();
-    expect(find.text('Music'), findsOneWidget);
+    expect(find.text('Listen'), findsOneWidget);
     expect(find.text('Morning Stillness'), findsWidgets);
     await t.scrollUntilVisible(find.text('Calm Piano'), 200, scrollable: find.byType(Scrollable).first);
     expect(find.text('Bansuri & Flute'), findsOneWidget);

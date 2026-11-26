@@ -14,6 +14,20 @@ const List<MusicCategory> musicCategories = [
     colors: [AppColors.mint, AppColors.sage],
   ),
   MusicCategory(
+    id: 'sleep',
+    name: LText('Sleep & Rest', 'नींद और आराम'),
+    description: LText('Slow, soft music for winding down at night.', 'रात को सुकून से सोने के लिए धीमा, कोमल संगीत।'),
+    icon: Icons.bedtime_rounded,
+    colors: [Color(0xFF9FA8DA), Color(0xFF5C6BC0)],
+  ),
+  MusicCategory(
+    id: 'energy',
+    name: LText('Energize', 'ऊर्जा'),
+    description: LText('Bright, uplifting music to start moving.', 'ताज़गी और उत्साह भरा संगीत।'),
+    icon: Icons.bolt_rounded,
+    colors: [Color(0xFFFFD59E), Color(0xFFF29E6D)],
+  ),
+  MusicCategory(
     id: 'meditation',
     name: LText('Meditation', 'ध्यान'),
     description: LText('Spacious tones for quiet sitting practice.', 'शांत बैठकर ध्यान के लिए विस्तृत स्वर।'),

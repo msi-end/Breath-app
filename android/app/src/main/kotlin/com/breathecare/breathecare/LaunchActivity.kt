@@ -32,7 +32,18 @@ class LaunchActivity : Activity() {
     }
 
     private fun openApp() {
-        startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION))
+        // Forward the launch intent (e.g. a tapped reminder's payload) and reuse
+        // the running Flutter activity instead of starting a second one.
+        val forward = Intent(this, MainActivity::class.java).apply {
+            action = intent?.action
+            intent?.extras?.let { putExtras(it) }
+            addFlags(
+                Intent.FLAG_ACTIVITY_NO_ANIMATION or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+            )
+        }
+        startActivity(forward)
         finish()
         @Suppress("DEPRECATION")
         overridePendingTransition(0, 0)

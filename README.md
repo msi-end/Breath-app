@@ -29,22 +29,24 @@ Free, ad-supported (Google AdMob), English + Hindi, light & dark themes, and ful
 | **Mood-Based Breathing** | “How are you feeling right now?” popup with 8 moods → a page of suitable techniques with an explanation and Start Breathing button. Mood is never stored. |
 | **Daily Challenges** | 7 rotating challenges, progress ring, completion status, challenge streak, 30-day completion rate, history of previous days. Computed from local history → works offline. |
 | **Emergency Calm Mode** | Starts instantly, simple 4-in / 6-out breathing (no holds), large visual, reassuring rotating messages, “Shorter breaths” option, big **Stop** button, medical-help disclaimer, offline, never shows ads. |
-| **Learn** | 8 illustrated articles (bilingual). |
+| **Explore** | ~50 bilingual pages in 6 sections: **Yoga asanas** (Tadasana, Vrikshasana, Bhujangasana, Surya Namaskar …), **Pranayama & breath tricks** (Anulom-Vilom, Bhramari, Ujjayi, Sheetali …), **Calm & stress relief**, **Herbs & kitchen wisdom** (haldi, tulsi, adrak, ashwagandha … each with a safety note), **Better lifestyle**, and the original **breathing guides**. Search (English or Hindi), category chips, pick of the day. Yoga/pranayama cards have a **Watch on YouTube** button that opens a YouTube search for that pose. |
+| **Reminders** | Optional morning (default 8:00 AM) and evening wind-down (default 9:00 PM) local notifications with a different message each weekday — breathing, yoga, herbs, energize or sleep music. Tapping one opens the matching screen. Offered once on the second day of use; change or turn off in Settings. Works offline. |
 | **Progress** | Total sessions/minutes, current & longest streak, today, weekly bar chart, 4-week activity heat-map, challenge completion, most practiced techniques, full session history. |
 | **Favorites** | Heart any technique; dedicated Favorites screen. |
 | **Audio guidance** | MP3s downloaded once from Firebase Storage, stored on device, played offline. Download progress, downloaded badge, retry, cancel, delete, delete-all, storage used. Player: Play/Pause, Replay, seek bar. |
 | **Account (optional)** | Invited after ~10 days of use (max twice). User ID + PIN, Login / Create Account / Maybe Later. Back up & restore progress (Firestore). The app never requires login. |
 | **Settings** | English / हिन्दी, Light / Dark / System theme, voice guidance & volume, haptics, gentle-mode default, downloaded audio management, account, Privacy Policy, Terms, About, ad privacy choices (when required), **Delete My Data**. |
 
-## Music tab
+## Listen tab
 
-A dedicated **Music** tab (between Learn and Progress) with:
+A dedicated **Listen** tab (2nd in the tab bar: Home · Listen · Explore · Progress · Settings) with:
 
-- **Library:** featured tracks, 15 categories (each opens its own page), search by title / artist / category, category filters and sorting (Recommended, A–Z, artist, shortest, longest, newest).
+- **Library:** featured tracks, 17 categories (each opens its own page), search by title / artist / category, category filters and sorting (Recommended, A–Z, artist, shortest, longest, newest).
 - **Player:** full-screen player with cover art, title and artist, play/pause, next/previous, seek bar with times, shuffle, repeat (off / all / one), favorite, download, add to playlist, and "About this track".
 - **Mini player:** persistent above the tab bar (and on music pages), with cover, title, play/pause and close. Tap it to open the full player.
 - **Background playback:** music keeps playing across tabs, with the screen locked, and from the notification / lock-screen media controls (`just_audio_background`).
-- **Downloads:** one-time download into app storage, with progress, a downloaded indicator, cancel, retry and delete. Downloaded tracks play offline.
+- **Saved as you listen:** the first time a track plays it is streamed *and* saved to the phone at the same time (`LockCachingAudioSource`), so it is never downloaded from the server again and plays offline. Can be turned off in Settings → "Save music as you listen".
+- **Downloads:** one-time download into app storage, with progress, a saved indicator, cancel, retry and delete. Saved tracks play offline.
 - **My Music:** Recently played, Favorites, Downloaded and Playlists (create, rename, delete, reorder, add/remove tracks).
 - **Memory:** remembers the last track and position (for tracks longer than 3 minutes), plus shuffle and repeat.
 - **Offline:** the catalog and cover images are cached on the device. If a track can't be reached, the app says so and skips it.
@@ -56,6 +58,7 @@ Breathing-guidance audio uses the same player, so it also gets background playba
 | id | Name | id | Name |
 | --- | --- | --- | --- |
 | `relaxation` | Relaxation | `stress` | Stress Relief |
+| `sleep` | Sleep & Rest | `energy` | Energize |
 | `meditation` | Meditation | `focus` | Focus |
 | `guided` | Guided Meditation | `ambient` | Peaceful Ambient |
 | `piano` | Calm Piano | `yoga` | Yoga |
@@ -110,7 +113,7 @@ Only upload music you own or are licensed to **distribute inside an app as downl
 
 ## Advertising rules (enforced in `lib/services/ads_service.dart`)
 
-* Only small, labelled **banner** ads (Home, Explore Techniques, Learn, Progress). No interstitial / full-screen ads.
+* Only small, labelled **banner** ads (Home, All Techniques, Explore, Listen, Progress). No interstitial / full-screen ads.
 * Ads are **suppressed** (banners disposed) whenever a breathing session or Emergency Calm Mode is open.
 * All requests are `nonPersonalizedAds: true`, with no keywords — mood/wellness data is never used for targeting. Content rating is capped at **G**.
 * Google UMP consent is requested where legally required; “Ad privacy choices” appears in Settings when needed.
@@ -197,6 +200,27 @@ lib/
   screens/                     all screens
   widgets/                     lotus breathing visual, nature background, banner slot, cards, charts
 test/                          unit + widget tests (flutter test)
+```
+
+## Play Store assets & marketing
+
+Everything for the store listing is in `store/`:
+
+| Path | What |
+| --- | --- |
+| `store/play/icon-512.png` | Play Store icon (512 × 512) |
+| `store/play/feature-graphic.png` | Feature graphic (1024 × 500) |
+| `store/play/screenshots/` | 8 phone screenshots (1080 × 1920) |
+| `store/play/LISTING.md` | Title, short + full description (English & Hindi), category, data-safety answers, release notes |
+| `store/brand/` | Logo on light background and rounded app tile |
+
+The icons and screenshots are rendered from the real app code, so re-run these after UI changes:
+
+```bash
+flutter test tool/store/render_brand_test.dart   # logo, launcher icons, Play icon
+dart run flutter_launcher_icons                  # regenerate Android/iOS launcher icons
+flutter test tool/store/render_store_test.dart   # screenshots + feature graphic
+python3 tool/store/check_listing.py              # listing text fits Play limits
 ```
 
 ## Credits

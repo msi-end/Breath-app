@@ -1,5 +1,8 @@
 import 'package:breathecare/app.dart';
+import 'package:breathecare/data/explore.dart';
 import 'package:breathecare/data/moods.dart';
+import 'package:breathecare/screens/article_screen.dart';
+import 'package:breathecare/screens/explore_screen.dart';
 import 'package:breathecare/data/techniques.dart';
 import 'package:breathecare/screens/emergency_calm_screen.dart';
 import 'package:breathecare/screens/home_screen.dart';
@@ -70,14 +73,14 @@ void usePhone(WidgetTester tester) {
 
 void main() {
   for (final lang in ['en', 'hi']) {
-    testWidgets('all four tabs render ($lang)', (tester) async {
+    testWidgets('all five tabs render ($lang)', (tester) async {
       usePhone(tester);
       await tester.pumpWidget(await buildApp(lang: lang));
       await tester.pumpAndSettle();
       expect(find.byType(NavigationBar), findsOneWidget);
       for (final icon in [
-        Icons.menu_book_outlined,
-        Icons.music_note_outlined,
+        Icons.headphones_outlined,
+        Icons.explore_outlined,
         Icons.insights_outlined,
         Icons.settings_outlined,
       ]) {
@@ -87,6 +90,38 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('explore: categories, search and YouTube buttons', (tester) async {
+    usePhone(tester);
+    await tester.pumpWidget(await buildApp(home: const Scaffold(body: ExploreScreen())));
+    await tester.pumpAndSettle();
+    expect(find.text('Pick of the day'.toUpperCase()), findsOneWidget);
+    await tester.tap(find.text('Yoga Asanas').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Mountain Pose'), findsOneWidget);
+    expect(find.byTooltip('Watch on YouTube'), findsWidgets);
+    await tester.tap(find.text('All').first);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'haldi');
+    await tester.pumpAndSettle();
+    expect(find.text('Turmeric'), findsOneWidget);
+    await tester.tap(find.text('Turmeric'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ArticleScreen), findsOneWidget);
+    expect(find.text('Watch on YouTube'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('every explore page renders', (tester) async {
+    usePhone(tester);
+    for (final lang in ['en', 'hi']) {
+      for (final a in allExploreItems) {
+        await tester.pumpWidget(await buildApp(lang: lang, home: ArticleScreen(article: a)));
+        await tester.pump();
+        expect(tester.takeException(), isNull, reason: '${a.id} $lang');
+      }
+    }
+  });
 
   testWidgets('mood popup opens and leads to recommendations', (tester) async {
     usePhone(tester);

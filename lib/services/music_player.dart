@@ -42,6 +42,7 @@ class MusicPlayer extends ChangeNotifier {
 
   AudioPlayer? _player;
   final List<StreamSubscription<dynamic>> _subs = [];
+  final Map<String, StreamSubscription<double>> _cacheSubs = {};
   List<MusicTrack> _queue = const [];
   int? _index;
   bool loading = false;
@@ -135,7 +136,20 @@ class MusicPlayer extends ChangeNotifier {
     if (local != null && File(local).existsSync()) return AudioSource.file(local, tag: tag);
     final url = await _library.streamUrl(t);
     if (url == null) return null;
-    return AudioSource.uri(Uri.parse(url), tag: tag);
+    final cache = _downloads.autoSave ? _downloads.fileFor(t.id) : null;
+    if (cache == null) return AudioSource.uri(Uri.parse(url), tag: tag);
+    // Stream and save at the same time: the next play is from the device,
+    // with no second download from the server.
+    // ignore: experimental_member_use
+    final src = LockCachingAudioSource(Uri.parse(url), cacheFile: cache, tag: tag);
+    unawaited(_cacheSubs.remove(t.id)?.cancel());
+    _cacheSubs[t.id] = src.downloadProgressStream.listen((p) {
+      if (p >= 1) {
+        unawaited(_downloads.markSaved(t));
+        unawaited(_cacheSubs.remove(t.id)?.cancel());
+      }
+    }, onError: (_) {});
+    return src;
   }
 
   /// Plays [tracks] starting at [index]. Tracks that can't be reached
@@ -329,7 +343,7 @@ class MusicPlayer extends ChangeNotifier {
   @override
   void dispose() {
     _saveTimer?.cancel();
-    for (final s in _subs) {
+    for (final s in [..._subs, ..._cacheSubs.values]) {
       s.cancel();
     }
     _player?.dispose();

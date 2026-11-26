@@ -44,6 +44,13 @@ const privacySections = [
     ),
   ),
   InfoSection(
+    LText('Reminders, music and links', 'रिमाइंडर, संगीत और लिंक'),
+    LText(
+      'Daily reminders are optional and scheduled on your device; nothing is sent to a server. Music you play is saved on your device so it can play offline. "Watch on YouTube" opens YouTube, which has its own privacy policy.',
+      'दैनिक रिमाइंडर वैकल्पिक हैं और आपके डिवाइस पर ही शेड्यूल होते हैं; कुछ भी सर्वर पर नहीं भेजा जाता। आपके द्वारा चलाया गया संगीत डिवाइस पर सेव होता है ताकि ऑफ़लाइन चल सके। "YouTube पर देखें" YouTube खोलता है, जिसकी अपनी गोपनीयता नीति है।',
+    ),
+  ),
+  InfoSection(
     LText('Your choices', 'आपके विकल्प'),
     LText(
       'You can use every feature without an account, delete downloaded audio at any time, and remove all of your data from this device (and your cloud backup, if any) using Settings › Delete My Data.',
